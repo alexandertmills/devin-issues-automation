@@ -134,41 +134,6 @@ function App() {
     }
   }
 
-  const executeIssue = async (issueId: number) => {
-    try {
-      const response = await fetch(`${API_BASE}/issues/${issueId}/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to execute issue: ${response.statusText}`)
-      }
-      
-      const data = await response.json()
-      console.log('Execution session created:', data)
-      
-      setIssues(prev => prev.map(item => 
-        item.issue.id === issueId 
-          ? { 
-              ...item, 
-              execution_session: { 
-                session_id: data.session_id, 
-                status: data.status,
-                confidence_score: null,
-                action_plan: null,
-                created_at: new Date().toISOString()
-              } 
-            }
-          : item
-      ))
-    } catch (err) {
-      console.error('Error executing issue:', err)
-      setError(err instanceof Error ? err.message : 'Failed to execute issue')
-    }
-  }
 
   const getStatusIcon = (status: string | null) => {
     switch (status) {
@@ -188,6 +153,16 @@ function App() {
                    status === 'running' ? 'secondary' : 
                    status === 'failed' ? 'destructive' : 'outline'
     return <Badge variant={variant}>{status || 'pending'}</Badge>
+  }
+
+  const getConfidenceColor = (score: number) => {
+    if (score >= 70) {
+      return 'bg-green-500'
+    } else if (score >= 40) {
+      return 'bg-amber-500'
+    } else {
+      return 'bg-red-500'
+    }
   }
 
   useEffect(() => {
@@ -318,11 +293,11 @@ function App() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">
+                    <CardTitle className="text-lg mb-1 flex items-center gap-2">
                       {item.issue.title}
+                      <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
-                      <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
                       <span>{item.issue.repository}</span>
                       <Badge variant={item.issue.state === 'open' ? 'default' : 'secondary'}>
                         {item.issue.state}
@@ -332,25 +307,28 @@ function App() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <p className="text-gray-700 text-sm line-clamp-3">
-                    {item.issue.body || 'No description provided'}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="flex gap-6">
+                  <div className="flex-1">
+                    <p className="text-gray-700 text-sm line-clamp-3">
+                      {item.issue.body || 'No description provided'}
+                    </p>
+                  </div>
+                  
+                  <div className="flex-shrink-0 w-48 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Scoping Session</h4>
+                      <h4 className="font-medium text-sm">Scoping</h4>
                       {item.scope_session && getStatusIcon(item.scope_session.status)}
                     </div>
                     {item.scope_session ? (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {getStatusBadge(item.scope_session.status)}
-                        {item.scope_session.confidence_score && (
-                          <p className="text-xs text-gray-600">
-                            Confidence: {item.scope_session.confidence_score}%
-                          </p>
+                        {item.scope_session.confidence_score !== null && (
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
+                            <p className="text-xs text-gray-600">
+                              Confidence: {item.scope_session.confidence_score}%
+                            </p>
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -361,30 +339,7 @@ function App() {
                         className="w-full"
                       >
                         <Play className="h-3 w-3 mr-1" />
-                        Start Scoping
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Execution Session</h4>
-                      {item.execution_session && getStatusIcon(item.execution_session.status)}
-                    </div>
-                    {item.execution_session ? (
-                      <div className="space-y-1">
-                        {getStatusBadge(item.execution_session.status)}
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => executeIssue(item.issue.id)}
-                        disabled={!item.scope_session}
-                        className="w-full"
-                      >
-                        <Play className="h-3 w-3 mr-1" />
-                        Start Execution
+                        Scope with Devin
                       </Button>
                     )}
                   </div>
