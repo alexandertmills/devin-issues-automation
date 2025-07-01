@@ -1,14 +1,16 @@
 import asyncio
 import asyncpg
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 async def drop_tables():
-    conn = await asyncpg.connect(
-        host='ep-sweet-breeze-a84hge8c-pooler.eastus2.azure.neon.tech',
-        database='neondb',
-        user='neondb_owner',
-        password='npg_iw4GofnvpQ3m',
-        ssl='require'
-    )
+    database_url = os.getenv("NEON_DATABASE_URL")
+    if not database_url:
+        raise ValueError("NEON_DATABASE_URL environment variable is not set")
+    
+    conn = await asyncpg.connect(database_url)
     
     await conn.execute('DROP TABLE IF EXISTS devin_sessions CASCADE;')
     await conn.execute('DROP TABLE IF EXISTS github_issues CASCADE;')

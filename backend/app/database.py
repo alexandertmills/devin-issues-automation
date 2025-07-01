@@ -7,12 +7,7 @@ from .models import Base
 
 load_dotenv()
 
-neon_host = "ep-sweet-breeze-a84hge8c-pooler.eastus2.azure.neon.tech"
-neon_db = "neondb"
-neon_user = "neondb_owner"
-neon_password = "npg_iw4GofnvpQ3m"
-
-DATABASE_URL = f"postgresql://{neon_user}:{neon_password}@{neon_host}/{neon_db}"
+DATABASE_URL = os.getenv("NEON_DATABASE_URL")
 
 if not DATABASE_URL:
     raise ValueError("NEON_DATABASE_URL environment variable is not set")

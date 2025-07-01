@@ -73,7 +73,7 @@ Create/verify the `.env` file:
 ```bash
 # The .env file should contain:
 DEVIN_SERVICE_API_KEY=${DEVIN_SERVICE_API_KEY}
-NEON_DATABASE_URL=postgresql://neondb_owner:npg_iw4GofnvpQ3m@ep-sweet-breeze-a84hge8c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require
+NEON_DATABASE_URL=${NEON_DATABASE_URL}
 GITHUB_TOKEN=
 GITHUB_APP_ID=1488267
 GITHUB_APP_PRIVATE_KEY=${GITHUB_APP_KEY}
@@ -170,15 +170,16 @@ curl https://app-lrzjyeeg.fly.dev/github-app-status
 ## Database Information
 
 ### Neon PostgreSQL Connection
-- **Host**: ep-sweet-breeze-a84hge8c-pooler.eastus2.azure.neon.tech
-- **Database**: neondb
-- **User**: neondb_owner
-- **Password**: npg_iw4GofnvpQ3m
+- **Host**: [REDACTED - Use environment variable]
+- **Database**: [REDACTED - Use environment variable]
+- **User**: [REDACTED - Use environment variable]
+- **Password**: [REDACTED - Use environment variable]
 - **SSL Mode**: require
 
 ### Connection String
 ```
-postgresql://neondb_owner:npg_iw4GofnvpQ3m@ep-sweet-breeze-a84hge8c-pooler.eastus2.azure.neon.tech/neondb?sslmode=require
+# Use the NEON_DATABASE_URL environment variable
+# Format: postgresql://user:password@host/database?sslmode=require
 ```
 
 ## Key Files and Their Status
