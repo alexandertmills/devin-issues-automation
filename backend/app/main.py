@@ -111,9 +111,10 @@ async def get_repository_issues(
     repo: str, 
     request: Request,
     state: str = "open",
-    limit: int = 10
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db)
 ):
-    """Get issues from a GitHub repository (simplified version without database)"""
+    """Get issues from a GitHub repository and store them in database"""
     try:
         github_token = request.headers.get('X-GitHub-Token')
         
@@ -126,24 +127,52 @@ async def get_repository_issues(
         
         limited_issues = issues[:limit] if issues else []
         
-        transformed_issues = []
-        for i, issue in enumerate(limited_issues):
-            transformed_issues.append({
-                "id": i + 1,  # Use index as temporary ID since we're not using database
-                "github_issue_id": issue["id"],
+        stored_issues = []
+        for issue in limited_issues:
+            result = await db.execute(
+                select(GitHubIssue).where(GitHubIssue.github_issue_id == issue["id"])
+            )
+            existing_issue = result.scalar_one_or_none()
+            
+            if existing_issue:
+                existing_issue.title = issue["title"]
+                existing_issue.body = issue.get("body", "")
+                existing_issue.state = issue["state"]
+                existing_issue.repository = f"{owner}/{repo}"
+                stored_issue = existing_issue
+            else:
+                new_issue = GitHubIssue(
+                    github_issue_id=issue["id"],
+                    title=issue["title"],
+                    body=issue.get("body", ""),
+                    state=issue["state"],
+                    repository=f"{owner}/{repo}"
+                )
+                db.add(new_issue)
+                stored_issue = new_issue
+            
+            await db.commit()
+            await db.refresh(stored_issue)
+            
+            issue_state = await stored_issue.get_state(db)
+            
+            stored_issues.append({
+                "id": stored_issue.id,
+                "github_issue_id": stored_issue.github_issue_id,
                 "number": issue["number"],
                 "html_url": issue["html_url"],
-                "title": issue["title"],
-                "body": issue.get("body", ""),
-                "state": issue["state"],
-                "repository": f"{owner}/{repo}",
-                "created_at": issue.get("created_at", ""),
-                "updated_at": issue.get("updated_at", "")
+                "title": stored_issue.title,
+                "body": stored_issue.body,
+                "state": stored_issue.state,
+                "repository": stored_issue.repository,
+                "issue_state": issue_state,
+                "created_at": stored_issue.created_at,
+                "updated_at": stored_issue.updated_at
             })
         
         return {
             "repository": f"{owner}/{repo}",
-            "issues": transformed_issues
+            "issues": stored_issues
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch issues: {str(e)}")
@@ -177,7 +206,7 @@ async def scope_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue_id=issue.id,
+        github_issue_id=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="scope",
         status="pending"
@@ -236,7 +265,7 @@ async def execute_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue_id=issue.id,
+        github_issue_id=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="execute",
         status="pending"
@@ -426,6 +455,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "body": issue.body,
                 "state": issue.state,
                 "repository": issue.repository,
+                "issue_state": await issue.get_state(db),
                 "created_at": issue.created_at,
                 "updated_at": issue.updated_at
             },
