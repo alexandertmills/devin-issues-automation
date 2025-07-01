@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Github, Play, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { Github, Play, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -135,18 +135,6 @@ function App() {
   }
 
 
-  const getStatusIcon = (status: string | null) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'running':
-        return <Clock className="h-4 w-4 text-blue-500" />
-      case 'failed':
-        return <AlertCircle className="h-4 w-4 text-red-500" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />
-    }
-  }
 
   const getStatusBadge = (status: string | null) => {
     const variant = status === 'completed' ? 'default' : 
@@ -296,13 +284,10 @@ function App() {
                     <CardTitle className="text-lg mb-1 flex items-center gap-2">
                       {item.issue.title}
                       <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <span>{item.issue.repository}</span>
                       <Badge variant={item.issue.state === 'open' ? 'default' : 'secondary'}>
                         {item.issue.state}
                       </Badge>
-                    </CardDescription>
+                    </CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -315,13 +300,9 @@ function App() {
                   </div>
                   
                   <div className="flex-shrink-0 w-48 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">Scoping</h4>
-                      {item.scope_session && getStatusIcon(item.scope_session.status)}
-                    </div>
                     {item.scope_session ? (
                       <div className="space-y-2">
-                        {getStatusBadge(item.scope_session.status)}
+                        {item.scope_session.status !== 'completed' && getStatusBadge(item.scope_session.status)}
                         {item.scope_session.confidence_score !== null && (
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
