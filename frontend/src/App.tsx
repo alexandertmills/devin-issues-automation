@@ -35,8 +35,8 @@ interface DashboardItem {
 function App() {
   const [issues, setIssues] = useState<DashboardItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [owner, setOwner] = useState('octocat')
-  const [repo, setRepo] = useState('Hello-World')
+  const [owner, setOwner] = useState('alexandertmills')
+  const [repo, setRepo] = useState('devin-issues-automation')
   const [githubToken, setGithubToken] = useState('')
   const [githubAppStatus, setGithubAppStatus] = useState<{
     configured: boolean
