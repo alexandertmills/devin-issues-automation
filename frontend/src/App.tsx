@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Github, Play, AlertCircle } from 'lucide-react'
+import { Github, Play, AlertCircle, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,8 @@ import './App.css'
 interface GitHubIssue {
   id: number
   github_issue_id: number
+  number: number
+  html_url: string
   title: string
   body: string
   state: string
@@ -221,7 +223,7 @@ function App() {
                     id="owner"
                     value={owner}
                     onChange={(e) => setOwner(e.target.value)}
-                    placeholder="octocat"
+                    placeholder="alexandertmills"
                   />
                 </div>
                 <div className="flex-1">
@@ -230,7 +232,7 @@ function App() {
                     id="repo"
                     value={repo}
                     onChange={(e) => setRepo(e.target.value)}
-                    placeholder="Hello-World"
+                    placeholder="devin-issues-automation"
                   />
                 </div>
                 <Button onClick={fetchIssues} disabled={loading}>
@@ -283,14 +285,14 @@ function App() {
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-1 flex items-center gap-2">
                       <a 
-                        href={`https://github.com/${owner}/${repo}/issues/${item.issue.github_issue_id}`}
+                        href={item.issue.html_url || `https://github.com/${owner}/${repo}/issues/${item.issue.number}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 hover:underline"
                       >
                         {item.issue.title}
                       </a>
-                      <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
+                      <Badge variant="outline">#{item.issue.number}</Badge>
                       <Badge 
                         variant="outline"
                         className={item.issue.state === 'open' 
@@ -303,7 +305,7 @@ function App() {
                     </CardTitle>
                   </div>
                   
-                  <div className="flex-shrink-0 ml-4">
+                  <div className="flex-shrink-0 ml-4 flex items-center gap-2">
                     {item.scope_session ? (
                       <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && getStatusBadge(item.scope_session.status)}
@@ -326,6 +328,16 @@ function App() {
                         Scope with Devin
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      asChild
+                    >
+                      <a href={item.issue.html_url || `https://github.com/${owner}/${repo}/issues/${item.issue.number}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View on GitHub
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
