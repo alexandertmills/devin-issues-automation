@@ -89,14 +89,17 @@ class GitHubClient:
             return None
     
     def get_repository_issues(self, owner: str, repo: str, state: str = "open") -> List[Dict]:
-        """Get issues from a GitHub repository"""
+        """Get issues from a GitHub repository (excludes pull requests)"""
         url = f"{self.base_url}/repos/{owner}/{repo}/issues"
         params = {"state": state, "per_page": 100}
         
         try:
             response = requests.get(url, headers=self.headers, params=params)
             response.raise_for_status()
-            return response.json()
+            all_items = response.json()
+            
+            issues_only = [item for item in all_items if 'pull_request' not in item]
+            return issues_only
         except requests.RequestException as e:
             print(f"Error fetching issues: {e}")
             return []
