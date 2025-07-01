@@ -70,7 +70,7 @@ function App() {
     setLoading(true)
     setError(null)
     try {
-      const url = `${API_BASE}/issues/${owner}/${repo}?state=open&limit=10`
+      const url = `${API_BASE}/issues/${owner}/${repo}?state=all&limit=10`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       }

@@ -121,7 +121,8 @@ async def get_repository_issues(
             
         issues = client.get_repository_issues(owner, repo, state)
         
-        limited_issues = issues[:limit] if issues else []
+        filtered_issues = [issue for issue in issues if 'pull_request' not in issue]
+        limited_issues = filtered_issues[:limit] if filtered_issues else []
         
         stored_issues = []
         for issue in limited_issues:
