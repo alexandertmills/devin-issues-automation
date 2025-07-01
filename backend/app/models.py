@@ -20,7 +20,7 @@ class GitHubIssue(Base):
     async def get_state(self, db_session) -> str:
         """
         Assess the state of this issue based on associated devin sessions:
-        - ready-to-scope: no devin_session associated with this issue
+        - ready-to-scope: no devin_session associated with this issue OR issue modified after most recent session
         - scope-in-progress: devin_session exists but no confidence_score
         - scope-complete: devin_session exists with confidence_score
         """
@@ -32,11 +32,15 @@ class GitHubIssue(Base):
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
-        scope_session = result.scalar_one_or_none()
+        most_recent_scope_session = result.scalar_one_or_none()
         
-        if not scope_session:
+        if not most_recent_scope_session:
             return "ready-to-scope"
-        elif scope_session.confidence_score is None:
+        
+        if self.updated_at > most_recent_scope_session.created_at:
+            return "ready-to-scope"
+        
+        if most_recent_scope_session.confidence_score is None:
             return "scope-in-progress"
         else:
             return "scope-complete"
