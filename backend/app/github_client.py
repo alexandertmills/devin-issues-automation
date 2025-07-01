@@ -48,7 +48,29 @@ class GitHubClient:
             'iss': self.app_id
         }
         
-        return jwt.encode(payload, self.private_key, algorithm='RS256')
+        formatted_key = self.private_key
+        
+        if formatted_key and '\n' not in formatted_key:
+            clean_key = formatted_key.replace(' ', '')
+            
+            begin_marker = '-----BEGINRSAPRIVATEKEY-----'
+            end_marker = '-----ENDRSAPRIVATEKEY-----'
+            
+            if begin_marker in clean_key and end_marker in clean_key:
+                start_idx = clean_key.find(begin_marker) + len(begin_marker)
+                end_idx = clean_key.find(end_marker)
+                
+                header = '-----BEGIN RSA PRIVATE KEY-----'
+                footer = '-----END RSA PRIVATE KEY-----'
+                middle = clean_key[start_idx:end_idx]
+                
+                lines = [header]
+                for i in range(0, len(middle), 64):
+                    lines.append(middle[i:i+64])
+                lines.append(footer)
+                formatted_key = '\n'.join(lines)
+        
+        return jwt.encode(payload, formatted_key, algorithm='RS256')
     
     def _get_installation_token(self, jwt_token: str) -> Optional[str]:
         """Get installation access token using JWT"""
