@@ -279,29 +279,33 @@ function App() {
           {issues.map((item) => (
             <Card key={item.issue.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-1 flex items-center gap-2">
-                      {item.issue.title}
+                      <a 
+                        href={`https://github.com/${owner}/${repo}/issues/${item.issue.github_issue_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {item.issue.title}
+                      </a>
                       <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
-                      <Badge variant={item.issue.state === 'open' ? 'default' : 'secondary'}>
+                      <Badge 
+                        variant="outline"
+                        className={item.issue.state === 'open' 
+                          ? 'border-red-500 text-red-700 bg-red-50' 
+                          : 'border-purple-500 text-purple-700 bg-purple-50'
+                        }
+                      >
                         {item.issue.state}
                       </Badge>
                     </CardTitle>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-6">
-                  <div className="flex-1">
-                    <p className="text-gray-700 text-sm line-clamp-3">
-                      {item.issue.body || 'No description provided'}
-                    </p>
-                  </div>
                   
-                  <div className="flex-shrink-0 w-48 space-y-2">
+                  <div className="flex-shrink-0 ml-4">
                     {item.scope_session ? (
-                      <div className="space-y-2">
+                      <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && getStatusBadge(item.scope_session.status)}
                         {item.scope_session.confidence_score !== null && (
                           <div className="flex items-center gap-2">
@@ -317,7 +321,6 @@ function App() {
                         size="sm"
                         variant="outline"
                         onClick={() => scopeIssue(item.issue.id)}
-                        className="w-full"
                       >
                         <Play className="h-3 w-3 mr-1" />
                         Scope with Devin
@@ -325,6 +328,11 @@ function App() {
                     )}
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 text-sm line-clamp-3">
+                  {item.issue.body || 'No description provided'}
+                </p>
               </CardContent>
             </Card>
           ))}
