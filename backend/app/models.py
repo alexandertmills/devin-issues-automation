@@ -17,6 +17,30 @@ class GitHubIssue(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
+    async def get_state(self, db_session) -> str:
+        """
+        Assess the state of this issue based on associated devin sessions:
+        - ready-to-scope: no devin_session associated with this issue
+        - scope-in-progress: devin_session exists but no confidence_score
+        - scope-complete: devin_session exists with confidence_score
+        """
+        from sqlalchemy import select
+        
+        result = await db_session.execute(
+            select(DevinSession).where(
+                DevinSession.github_issue_id == self.github_issue_id,
+                DevinSession.session_type == "scope"
+            ).order_by(DevinSession.created_at.desc())
+        )
+        scope_session = result.scalar_one_or_none()
+        
+        if not scope_session:
+            return "ready-to-scope"
+        elif scope_session.confidence_score is None:
+            return "scope-in-progress"
+        else:
+            return "scope-complete"
+    
 class DevinSession(Base):
     __tablename__ = "devin_sessions"
     
