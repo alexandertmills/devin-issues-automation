@@ -45,7 +45,7 @@ class GitHubClient:
         payload = {
             'iat': now,
             'exp': now + 600,  # 10 minutes
-            'iss': self.app_id
+            'iss': int(self.app_id)
         }
         
         formatted_key = self.private_key

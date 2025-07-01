@@ -37,8 +37,8 @@ interface DashboardItem {
 function App() {
   const [issues, setIssues] = useState<DashboardItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [owner, setOwner] = useState('octocat')
-  const [repo, setRepo] = useState('Hello-World')
+  const [owner, setOwner] = useState('alexandertmills')
+  const [repo, setRepo] = useState('devin-issues-automation')
   const [githubToken, setGithubToken] = useState('')
   const [githubAppStatus, setGithubAppStatus] = useState<{
     configured: boolean
@@ -260,7 +260,7 @@ function App() {
                     id="owner"
                     value={owner}
                     onChange={(e) => setOwner(e.target.value)}
-                    placeholder="octocat"
+                    placeholder="alexandertmills"
                   />
                 </div>
                 <div className="flex-1">
@@ -269,7 +269,7 @@ function App() {
                     id="repo"
                     value={repo}
                     onChange={(e) => setRepo(e.target.value)}
-                    placeholder="Hello-World"
+                    placeholder="devin-issues-automation"
                   />
                 </div>
                 <Button onClick={fetchIssues} disabled={loading}>
