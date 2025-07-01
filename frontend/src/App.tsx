@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Github, Play, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { Github, Play, CheckCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,8 @@ import './App.css'
 interface GitHubIssue {
   id: number
   github_issue_id: number
+  number: number
+  html_url: string
   title: string
   body: string
   state: string
@@ -322,13 +324,23 @@ function App() {
                       {item.issue.title}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
-                      <Badge variant="outline">#{item.issue.github_issue_id}</Badge>
-                      <span>{item.issue.repository}</span>
+                      <Badge variant="outline">#{item.issue.number}</Badge>
+                      <span className="font-medium">{item.issue.repository}</span>
                       <Badge variant={item.issue.state === 'open' ? 'default' : 'secondary'}>
                         {item.issue.state}
                       </Badge>
                     </CardDescription>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    asChild
+                  >
+                    <a href={item.issue.html_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      View on GitHub
+                    </a>
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>

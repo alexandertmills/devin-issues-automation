@@ -127,6 +127,8 @@ async def get_repository_issues(
             transformed_issues.append({
                 "id": i + 1,  # Use index as temporary ID since we're not using database
                 "github_issue_id": issue["id"],
+                "number": issue["number"],
+                "html_url": issue["html_url"],
                 "title": issue["title"],
                 "body": issue.get("body", ""),
                 "state": issue["state"],
