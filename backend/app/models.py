@@ -15,9 +15,38 @@ class GitHubIssue(Base):
     body = Column(Text)
     state = Column(String)
     repository = Column(String)
+    html_url = Column(String)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
+    async def get_state(self, db_session) -> str:
+        """
+        Assess the state of this issue based on associated devin sessions:
+        - ready-to-scope: no devin_session associated with this issue OR issue modified after most recent session
+        - scope-in-progress: devin_session exists but no confidence_score
+        - scope-complete: devin_session exists with confidence_score
+        """
+        from sqlalchemy import select
+        
+        result = await db_session.execute(
+            select(DevinSession).where(
+                DevinSession.github_issue == self.id,
+                DevinSession.session_type == "scope"
+            ).order_by(DevinSession.created_at.desc())
+        )
+        most_recent_scope_session = result.scalar_one_or_none()
+        
+        if not most_recent_scope_session:
+            return "ready-to-scope"
+        
+        if self.updated_at > most_recent_scope_session.created_at:
+            return "ready-to-scope"
+        
+        if most_recent_scope_session.confidence_score is None:
+            return "scope-in-progress"
+        else:
+            return "scope-complete"
+
 class GitHubUser(Base):
     __tablename__ = "github_users"
     
@@ -50,12 +79,11 @@ class Repository(Base):
         if owner_username:
             return f"https://api.github.com/repos/{owner_username}/{self.name}/issues"
         return None
-
 class DevinSession(Base):
     __tablename__ = "devin_sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    github_issue_id = Column(BigInteger, index=True)
+    github_issue = Column(Integer, ForeignKey('github_issues.id'), index=True)
     session_id = Column(String, unique=True, index=True)
     session_type = Column(String)  # "scope" or "execute"
     status = Column(String)  # "pending", "running", "completed", "failed"

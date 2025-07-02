@@ -107,9 +107,10 @@ async def get_repository_issues(
     repo: str, 
     request: Request,
     state: str = "open",
-    limit: int = 10
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db)
 ):
-    """Get issues from a GitHub repository (simplified version without database)"""
+    """Get issues from a GitHub repository and store them in database"""
     try:
         github_token = request.headers.get('X-GitHub-Token')
         
@@ -120,24 +121,57 @@ async def get_repository_issues(
             
         issues = client.get_repository_issues(owner, repo, state)
         
-        limited_issues = issues[:limit] if issues else []
+        filtered_issues = [issue for issue in issues if 'pull_request' not in issue]
+        limited_issues = filtered_issues[:limit] if filtered_issues else []
         
-        transformed_issues = []
-        for i, issue in enumerate(limited_issues):
-            transformed_issues.append({
-                "id": i + 1,  # Use index as temporary ID since we're not using database
-                "github_issue_id": issue["id"],
-                "title": issue["title"],
-                "body": issue.get("body", ""),
-                "state": issue["state"],
-                "repository": f"{owner}/{repo}",
-                "created_at": issue.get("created_at", ""),
-                "updated_at": issue.get("updated_at", "")
+        stored_issues = []
+        for issue in limited_issues:
+            result = await db.execute(
+                select(GitHubIssue).where(GitHubIssue.github_issue_id == issue["id"])
+            )
+            existing_issue = result.scalar_one_or_none()
+            
+            if existing_issue:
+                existing_issue.title = issue["title"]
+                existing_issue.body = issue.get("body", "")
+                existing_issue.state = issue["state"]
+                existing_issue.repository = f"{owner}/{repo}"
+                existing_issue.html_url = issue["html_url"]
+                stored_issue = existing_issue
+            else:
+                new_issue = GitHubIssue(
+                    github_issue_id=issue["id"],
+                    title=issue["title"],
+                    body=issue.get("body", ""),
+                    state=issue["state"],
+                    repository=f"{owner}/{repo}",
+                    html_url=issue["html_url"]
+                )
+                db.add(new_issue)
+                stored_issue = new_issue
+            
+            await db.commit()
+            await db.refresh(stored_issue)
+            
+            issue_state = await stored_issue.get_state(db)
+            
+            stored_issues.append({
+                "id": stored_issue.id,
+                "github_issue_id": stored_issue.github_issue_id,
+                "number": issue["number"],
+                "html_url": issue["html_url"],
+                "title": stored_issue.title,
+                "body": stored_issue.body,
+                "state": stored_issue.state,
+                "repository": stored_issue.repository,
+                "issue_state": issue_state,
+                "created_at": stored_issue.created_at,
+                "updated_at": stored_issue.updated_at
             })
         
         return {
             "repository": f"{owner}/{repo}",
-            "issues": transformed_issues
+            "issues": stored_issues
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch issues: {str(e)}")
@@ -171,7 +205,7 @@ async def scope_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue_id=issue.id,
+        github_issue=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="scope",
         status="pending"
@@ -202,7 +236,7 @@ async def execute_issue(
     
     scope_result = await db.execute(
         select(DevinSession).where(
-            DevinSession.github_issue_id == issue.id,
+            DevinSession.github_issue == issue.github_issue_id,
             DevinSession.session_type == "scope"
         ).order_by(DevinSession.created_at.desc())
     )
@@ -230,7 +264,7 @@ async def execute_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue_id=issue.id,
+        github_issue=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="execute",
         status="pending"
@@ -277,7 +311,7 @@ async def get_session_status(
     
     return {
         "session_id": session.session_id,
-        "github_issue_id": session.github_issue_id,
+        "github_issue_id": session.github_issue,
         "session_type": session.session_type,
         "status": session.status,
         "confidence_score": session.confidence_score,
@@ -388,6 +422,100 @@ async def get_github_app_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error checking GitHub App status: {str(e)}")
 
+@app.post("/test-devin-issue-url")
+async def test_devin_issue_url():
+    """Test creating a Devin session with just a GitHub issue URL"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    issue_url = "https://github.com/alexandertmills/devin-issues-automation/issues/7"
+    
+    github_token = None
+    if github_client and hasattr(github_client, 'headers') and 'Authorization' in github_client.headers:
+        auth_header = github_client.headers['Authorization']
+        if auth_header.startswith('token '):
+            github_token = auth_header[6:]  # Remove "token " prefix
+    
+    prompt_url_only = f"""
+Please analyze this GitHub issue and provide a confidence score for how actionable it is.
+
+Repository: alexandertmills/devin-issues-automation
+Issue URL: {issue_url}
+
+Please fetch the issue details from the repository and provide:
+1. A confidence score (0-100) for how well-defined and actionable this issue is
+2. A brief analysis of what needs to be done
+
+Format your response as:
+CONFIDENCE_SCORE: [0-100]
+ANALYSIS: [Your analysis]
+"""
+    
+    session_data_url = devin_client.create_session(prompt_url_only)
+    
+    return {
+        "test_type": "url_only",
+        "issue_url": issue_url,
+        "session_data": session_data_url,
+        "prompt_used": prompt_url_only
+    }
+
+@app.post("/test-devin-issue-content")
+async def test_devin_issue_content():
+    """Test creating a Devin session with full issue content"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    issue_title = "Needs moar cowbell."
+    issue_body = "Cowbell. It needs moar of it!!"
+    issue_url = "https://github.com/alexandertmills/devin-issues-automation/issues/7"
+    repo_name = "alexandertmills/devin-issues-automation"
+    
+    prompt_with_content = f"""
+Please analyze this GitHub issue and provide a confidence score for how actionable it is.
+
+Repository: {repo_name}
+Issue URL: {issue_url}
+Issue Title: {issue_title}
+Issue Description: {issue_body}
+
+Please provide:
+1. A confidence score (0-100) for how well-defined and actionable this issue is
+2. A brief analysis of what needs to be done
+
+Format your response as:
+CONFIDENCE_SCORE: [0-100]
+ANALYSIS: [Your analysis]
+"""
+    
+    session_data_content = devin_client.create_session(prompt_with_content)
+    
+    return {
+        "test_type": "full_content",
+        "issue_url": issue_url,
+        "issue_title": issue_title,
+        "issue_body": issue_body,
+        "session_data": session_data_content,
+        "prompt_used": prompt_with_content
+    }
+
+@app.post("/test-devin-approaches-comparison")
+async def test_devin_approaches_comparison():
+    """Compare URL-only vs full-content approaches for Devin issue analysis"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    url_result = await test_devin_issue_url()
+    content_result = await test_devin_issue_content()
+    
+    return {
+        "comparison": {
+            "url_only_approach": url_result,
+            "full_content_approach": content_result
+        },
+        "summary": "Testing whether Devin can access GitHub repos via URL vs needs full content"
+    }
+
 @app.get("/dashboard")
 async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     """Get dashboard data with issues and their associated sessions"""
@@ -398,7 +526,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     for issue in issues:
         scope_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue_id == issue.id,
+                DevinSession.github_issue == issue.github_issue_id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -406,7 +534,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
         
         exec_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue_id == issue.id,
+                DevinSession.github_issue == issue.github_issue_id,
                 DevinSession.session_type == "execute"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -420,6 +548,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "body": issue.body,
                 "state": issue.state,
                 "repository": issue.repository,
+                "issue_state": await issue.get_state(db),
                 "created_at": issue.created_at,
                 "updated_at": issue.updated_at
             },

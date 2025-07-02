@@ -145,12 +145,38 @@ This will start the frontend on `http://localhost:5173`
 
 **Note**: The app will be available at http://localhost:5173 (Vite default port)
 
+## Deployment Setup
+
+### Quick Setup for Devin Sessions
+
+For Devin sessions with access to required secrets, use the automated setup script:
+
+```bash
+chmod +x setup-deployment.sh
+./setup-deployment.sh
+```
+
+This script will automatically configure environment variables for both backend and frontend using available Devin secrets.
+
+### Manual Setup
+
+#### Backend Environment Setup
+1. Copy environment template: `cp backend/.env.example backend/.env`
+2. Fill in the actual values in `backend/.env`
+3. Deploy: `deploy_backend backend/`
+
+#### Frontend Environment Setup
+1. Copy environment template: `cp frontend/.env.example frontend/.env`
+2. Set `VITE_API_BASE_URL` to your deployed backend URL
+3. Build: `cd frontend && npm run build`
+4. Deploy: `deploy_frontend frontend/dist`
+
 ## Deployed Backend Information
 
 ### Current Deployment
-- **URL**: https://app-lrzjyeeg.fly.dev/
+- **URL**: https://app-xuiczebe.fly.dev/
 - **Status**: Working (as of last session)
-- **Health Check**: https://app-lrzjyeeg.fly.dev/healthz
+- **Health Check**: https://app-xuiczebe.fly.dev/healthz
 
 ### Testing Deployed Backend
 ```bash
