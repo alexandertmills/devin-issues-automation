@@ -126,48 +126,63 @@ async def get_repository_issues(
         
         stored_issues = []
         for issue in limited_issues:
-            result = await db.execute(
-                select(GitHubIssue).where(GitHubIssue.github_issue_id == issue["id"])
-            )
-            existing_issue = result.scalar_one_or_none()
-            
-            if existing_issue:
-                existing_issue.title = issue["title"]
-                existing_issue.body = issue.get("body", "")
-                existing_issue.state = issue["state"]
-                existing_issue.repository = f"{owner}/{repo}"
-                existing_issue.html_url = issue["html_url"]
-                stored_issue = existing_issue
-            else:
-                new_issue = GitHubIssue(
-                    github_issue_id=issue["id"],
-                    title=issue["title"],
-                    body=issue.get("body", ""),
-                    state=issue["state"],
-                    repository=f"{owner}/{repo}",
-                    html_url=issue["html_url"]
+            try:
+                print(f"Processing issue: {issue['id']} - {issue['title']}")
+                result = await db.execute(
+                    select(GitHubIssue).where(GitHubIssue.github_issue_id == issue["id"])
                 )
-                db.add(new_issue)
-                stored_issue = new_issue
-            
-            await db.commit()
-            await db.refresh(stored_issue)
-            
-            issue_state = await stored_issue.get_state(db)
-            
-            stored_issues.append({
-                "id": stored_issue.id,
-                "github_issue_id": stored_issue.github_issue_id,
-                "number": issue["number"],
-                "html_url": issue["html_url"],
-                "title": stored_issue.title,
-                "body": stored_issue.body,
-                "state": stored_issue.state,
-                "repository": stored_issue.repository,
-                "issue_state": issue_state,
-                "created_at": stored_issue.created_at,
-                "updated_at": stored_issue.updated_at
-            })
+                existing_issue = result.scalar_one_or_none()
+                
+                if existing_issue:
+                    print(f"Updating existing issue: {existing_issue.id}")
+                    existing_issue.title = issue["title"]
+                    existing_issue.body = issue.get("body", "")
+                    existing_issue.state = issue["state"]
+                    existing_issue.repository = f"{owner}/{repo}"
+                    existing_issue.html_url = issue["html_url"]
+                    stored_issue = existing_issue
+                else:
+                    print(f"Creating new issue: {issue['id']}")
+                    new_issue = GitHubIssue(
+                        github_issue_id=issue["id"],
+                        title=issue["title"],
+                        body=issue.get("body", ""),
+                        state=issue["state"],
+                        repository=f"{owner}/{repo}",
+                        html_url=issue["html_url"]
+                    )
+                    db.add(new_issue)
+                    stored_issue = new_issue
+                
+                print("Committing to database...")
+                await db.commit()
+                print("Refreshing stored issue...")
+                await db.refresh(stored_issue)
+                
+                print("Getting issue state...")
+                issue_state = await stored_issue.get_state(db)
+                print(f"Issue state: {issue_state}")
+                
+                stored_issues.append({
+                    "id": stored_issue.id,
+                    "github_issue_id": stored_issue.github_issue_id,
+                    "number": issue["number"],
+                    "html_url": issue["html_url"],
+                    "title": stored_issue.title,
+                    "body": stored_issue.body,
+                    "state": stored_issue.state,
+                    "repository": stored_issue.repository,
+                    "issue_state": issue_state,
+                    "created_at": stored_issue.created_at,
+                    "updated_at": stored_issue.updated_at
+                })
+                print(f"Successfully processed issue: {issue['id']}")
+            except Exception as e:
+                print(f"Error processing issue {issue['id']}: {str(e)}")
+                print(f"Error type: {type(e)}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                raise e
         
         return {
             "repository": f"{owner}/{repo}",

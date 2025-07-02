@@ -30,7 +30,7 @@ class GitHubIssue(Base):
         
         result = await db_session.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == self.id,
+                DevinSession.github_issue_id == self.id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -58,7 +58,7 @@ class GitHubUser(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    repositories = relationship("Repository", back_populates="github_user")
+    repositories = relationship("Repository", back_populates="github_user_rel")
 
 class Repository(Base):
     __tablename__ = "repositories"
@@ -83,7 +83,7 @@ class DevinSession(Base):
     __tablename__ = "devin_sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    github_issue = Column(Integer, ForeignKey('github_issues.id'), index=True)
+    github_issue_id = Column(Integer, ForeignKey('github_issues.id'), index=True)
     session_id = Column(String, unique=True, index=True)
     session_type = Column(String)  # "scope" or "execute"
     status = Column(String)  # "pending", "running", "completed", "failed"
