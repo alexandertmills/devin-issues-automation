@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Github, Play, AlertCircle, ExternalLink } from 'lucide-react'
+import { Github, Play, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -328,16 +328,6 @@ function App() {
                         Scope with Devin
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                    >
-                      <a href={item.issue.html_url || `https://github.com/${owner}/${repo}/issues/${item.issue.number}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        View on GitHub
-                      </a>
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
