@@ -136,6 +136,7 @@ async def get_repository_issues(
                 existing_issue.body = issue.get("body", "")
                 existing_issue.state = issue["state"]
                 existing_issue.repository = f"{owner}/{repo}"
+                existing_issue.html_url = issue["html_url"]
                 stored_issue = existing_issue
             else:
                 new_issue = GitHubIssue(
@@ -143,7 +144,8 @@ async def get_repository_issues(
                     title=issue["title"],
                     body=issue.get("body", ""),
                     state=issue["state"],
-                    repository=f"{owner}/{repo}"
+                    repository=f"{owner}/{repo}",
+                    html_url=issue["html_url"]
                 )
                 db.add(new_issue)
                 stored_issue = new_issue
@@ -234,7 +236,7 @@ async def execute_issue(
     
     scope_result = await db.execute(
         select(DevinSession).where(
-            DevinSession.github_issue_id == issue.id,
+            DevinSession.github_issue_id == issue.github_issue_id,
             DevinSession.session_type == "scope"
         ).order_by(DevinSession.created_at.desc())
     )
@@ -430,7 +432,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     for issue in issues:
         scope_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue_id == issue.id,
+                DevinSession.github_issue_id == issue.github_issue_id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -438,7 +440,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
         
         exec_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue_id == issue.id,
+                DevinSession.github_issue_id == issue.github_issue_id,
                 DevinSession.session_type == "execute"
             ).order_by(DevinSession.created_at.desc())
         )

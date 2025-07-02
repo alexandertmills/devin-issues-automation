@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float, BigInteger
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float, BigInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -14,6 +14,7 @@ class GitHubIssue(Base):
     body = Column(Text)
     state = Column(String)
     repository = Column(String)
+    html_url = Column(String)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
@@ -28,7 +29,7 @@ class GitHubIssue(Base):
         
         result = await db_session.execute(
             select(DevinSession).where(
-                DevinSession.github_issue_id == self.github_issue_id,
+                DevinSession.github_issue_id == self.id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -49,7 +50,7 @@ class DevinSession(Base):
     __tablename__ = "devin_sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    github_issue_id = Column(BigInteger, index=True)
+    github_issue_id = Column(Integer, ForeignKey('github_issues.id'), index=True)
     session_id = Column(String, unique=True, index=True)
     session_type = Column(String)  # "scope" or "execute"
     status = Column(String)  # "pending", "running", "completed", "failed"
