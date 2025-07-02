@@ -50,7 +50,7 @@ function App() {
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const API_BASE = 'https://app-xuiczebe.fly.dev'
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
   const fetchGithubAppStatus = async () => {
     try {
