@@ -32,11 +32,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-github_client = GitHubClient(
-    app_id=os.getenv("Github_App_app_id"),
-    private_key=os.getenv("GITHUB_PEM"), 
-    installation_id=os.getenv("github_app_install_id")
-)
+github_client = GitHubClient()
 devin_client = None
 try:
     devin_client = DevinClient()
@@ -125,7 +121,8 @@ async def get_repository_issues(
             
         issues = client.get_repository_issues(owner, repo, state)
         
-        limited_issues = issues[:limit] if issues else []
+        filtered_issues = [issue for issue in issues if 'pull_request' not in issue]
+        limited_issues = filtered_issues[:limit] if filtered_issues else []
         
         stored_issues = []
         for issue in limited_issues:
@@ -373,9 +370,9 @@ async def get_user_repositories(request: Request):
 async def get_github_app_status():
     """Get GitHub App authentication status and configuration"""
     try:
-        app_id = os.getenv("Github_App_app_id")
-        private_key = os.getenv("GITHUB_PEM")
-        installation_id = os.getenv("github_app_install_id")
+        app_id = os.getenv("GITHUB_APP_ID")
+        private_key = os.getenv("GITHUB_APP_PRIVATE_KEY")
+        installation_id = os.getenv("GITHUB_APP_INSTALLATION_ID")
         
         if not app_id or not private_key or not installation_id:
             return {

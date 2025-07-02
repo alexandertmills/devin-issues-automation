@@ -45,32 +45,10 @@ class GitHubClient:
         payload = {
             'iat': now,
             'exp': now + 600,  # 10 minutes
-            'iss': int(self.app_id)
+            'iss': self.app_id
         }
         
-        formatted_key = self.private_key
-        
-        if formatted_key and '\n' not in formatted_key:
-            clean_key = formatted_key.replace(' ', '')
-            
-            begin_marker = '-----BEGINRSAPRIVATEKEY-----'
-            end_marker = '-----ENDRSAPRIVATEKEY-----'
-            
-            if begin_marker in clean_key and end_marker in clean_key:
-                start_idx = clean_key.find(begin_marker) + len(begin_marker)
-                end_idx = clean_key.find(end_marker)
-                
-                header = '-----BEGIN RSA PRIVATE KEY-----'
-                footer = '-----END RSA PRIVATE KEY-----'
-                middle = clean_key[start_idx:end_idx]
-                
-                lines = [header]
-                for i in range(0, len(middle), 64):
-                    lines.append(middle[i:i+64])
-                lines.append(footer)
-                formatted_key = '\n'.join(lines)
-        
-        return jwt.encode(payload, formatted_key, algorithm='RS256')
+        return jwt.encode(payload, self.private_key, algorithm='RS256')
     
     def _get_installation_token(self, jwt_token: str) -> Optional[str]:
         """Get installation access token using JWT"""
@@ -89,17 +67,14 @@ class GitHubClient:
             return None
     
     def get_repository_issues(self, owner: str, repo: str, state: str = "open") -> List[Dict]:
-        """Get issues from a GitHub repository (excludes pull requests)"""
+        """Get issues from a GitHub repository"""
         url = f"{self.base_url}/repos/{owner}/{repo}/issues"
         params = {"state": state, "per_page": 100}
         
         try:
             response = requests.get(url, headers=self.headers, params=params)
             response.raise_for_status()
-            all_items = response.json()
-            
-            issues_only = [item for item in all_items if 'pull_request' not in item]
-            return issues_only
+            return response.json()
         except requests.RequestException as e:
             print(f"Error fetching issues: {e}")
             return []
