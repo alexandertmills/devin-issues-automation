@@ -238,6 +238,25 @@ function App() {
                   </ul>
                 </div>
               )}
+              {!githubAppStatus.configured && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800 font-medium mb-2">
+                    Install GitHub App
+                  </p>
+                  <p className="text-sm text-blue-700 mb-2">
+                    To use this automation system, install our GitHub App on your repositories:
+                  </p>
+                  <a
+                    href="https://github.com/apps/devin-issues-integration-app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Github className="h-4 w-4 mr-2" />
+                    Install GitHub App
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
