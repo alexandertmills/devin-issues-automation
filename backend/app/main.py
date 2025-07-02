@@ -422,6 +422,100 @@ async def get_github_app_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error checking GitHub App status: {str(e)}")
 
+@app.post("/test-devin-issue-url")
+async def test_devin_issue_url():
+    """Test creating a Devin session with just a GitHub issue URL"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    issue_url = "https://github.com/alexandertmills/devin-issues-automation/issues/7"
+    
+    github_token = None
+    if github_client and hasattr(github_client, 'headers') and 'Authorization' in github_client.headers:
+        auth_header = github_client.headers['Authorization']
+        if auth_header.startswith('token '):
+            github_token = auth_header[6:]  # Remove "token " prefix
+    
+    prompt_url_only = f"""
+Please analyze this GitHub issue and provide a confidence score for how actionable it is.
+
+Repository: alexandertmills/devin-issues-automation
+Issue URL: {issue_url}
+
+Please fetch the issue details from the repository and provide:
+1. A confidence score (0-100) for how well-defined and actionable this issue is
+2. A brief analysis of what needs to be done
+
+Format your response as:
+CONFIDENCE_SCORE: [0-100]
+ANALYSIS: [Your analysis]
+"""
+    
+    session_data_url = devin_client.create_session(prompt_url_only)
+    
+    return {
+        "test_type": "url_only",
+        "issue_url": issue_url,
+        "session_data": session_data_url,
+        "prompt_used": prompt_url_only
+    }
+
+@app.post("/test-devin-issue-content")
+async def test_devin_issue_content():
+    """Test creating a Devin session with full issue content"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    issue_title = "Needs moar cowbell."
+    issue_body = "Cowbell. It needs moar of it!!"
+    issue_url = "https://github.com/alexandertmills/devin-issues-automation/issues/7"
+    repo_name = "alexandertmills/devin-issues-automation"
+    
+    prompt_with_content = f"""
+Please analyze this GitHub issue and provide a confidence score for how actionable it is.
+
+Repository: {repo_name}
+Issue URL: {issue_url}
+Issue Title: {issue_title}
+Issue Description: {issue_body}
+
+Please provide:
+1. A confidence score (0-100) for how well-defined and actionable this issue is
+2. A brief analysis of what needs to be done
+
+Format your response as:
+CONFIDENCE_SCORE: [0-100]
+ANALYSIS: [Your analysis]
+"""
+    
+    session_data_content = devin_client.create_session(prompt_with_content)
+    
+    return {
+        "test_type": "full_content",
+        "issue_url": issue_url,
+        "issue_title": issue_title,
+        "issue_body": issue_body,
+        "session_data": session_data_content,
+        "prompt_used": prompt_with_content
+    }
+
+@app.post("/test-devin-approaches-comparison")
+async def test_devin_approaches_comparison():
+    """Compare URL-only vs full-content approaches for Devin issue analysis"""
+    if not devin_client:
+        raise HTTPException(status_code=503, detail="Devin API not available")
+    
+    url_result = await test_devin_issue_url()
+    content_result = await test_devin_issue_content()
+    
+    return {
+        "comparison": {
+            "url_only_approach": url_result,
+            "full_content_approach": content_result
+        },
+        "summary": "Testing whether Devin can access GitHub repos via URL vs needs full content"
+    }
+
 @app.get("/dashboard")
 async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     """Get dashboard data with issues and their associated sessions"""
