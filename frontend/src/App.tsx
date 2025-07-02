@@ -50,7 +50,7 @@ function App() {
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const API_BASE = 'http://localhost:8000'
+  const API_BASE = 'https://app-xuiczebe.fly.dev'
 
   const fetchGithubAppStatus = async () => {
     try {
