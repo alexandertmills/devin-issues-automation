@@ -10,7 +10,7 @@ class DevinClient:
         self.api_key = os.getenv("DEVIN_SERVICE_API_KEY")
         if not self.api_key:
             raise ValueError("DEVIN_SERVICE_API_KEY environment variable must be set")
-        self.base_url = "https://api.devin.ai"
+        self.base_url = "https://api.devin.ai/v1"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -20,7 +20,8 @@ class DevinClient:
         """Create a new Devin session"""
         url = f"{self.base_url}/sessions"
         payload = {
-            "prompt": prompt
+            "prompt": prompt,
+            "unlisted": True
         }
         
         try:
