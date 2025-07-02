@@ -16,12 +16,11 @@ class DevinClient:
             "Content-Type": "application/json"
         }
     
-    def create_session(self, prompt: str, repo_url: str = None) -> Optional[Dict]:
+    def create_session(self, prompt: str) -> Optional[Dict]:
         """Create a new Devin session"""
         url = f"{self.base_url}/sessions"
         payload = {
-            "prompt": prompt,
-            "repo_url": repo_url
+            "prompt": prompt
         }
         
         try:
