@@ -36,14 +36,14 @@ class Repository(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
-    github_user_id = Column(Integer, ForeignKey("github_users.id"), nullable=False)
+    github_user = Column(Integer, ForeignKey("github_users.id"), nullable=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    github_user = relationship("GitHubUser", back_populates="repositories")
+    github_user_rel = relationship("GitHubUser", back_populates="repositories")
     
     def get_owner_username(self):
-        return self.github_user.username if self.github_user else None
+        return self.github_user_rel.username if self.github_user_rel else None
     
     def get_issues_api_url(self):
         owner_username = self.get_owner_username()
