@@ -671,3 +671,27 @@ async def webhook_status():
         "signature_verification": "enabled" if webhook_secret else "disabled",
         "note": "Configure GITHUB_WEBHOOK_SECRET environment variable for signature verification"
     }
+
+@app.get("/app/repositories")
+async def get_app_repositories():
+    """Get repositories accessible to the GitHub App installation"""
+    try:
+        if not github_client or not hasattr(github_client, 'app_id'):
+            raise HTTPException(status_code=503, detail="GitHub App not configured")
+        
+        repositories = github_client.get_installation_repositories()
+        
+        return {
+            "repositories": [
+                {
+                    "name": repo["name"],
+                    "full_name": repo["full_name"],
+                    "owner": repo["owner"]["login"],
+                    "private": repo["private"],
+                    "description": repo.get("description", "")
+                }
+                for repo in repositories
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching repositories: {str(e)}")

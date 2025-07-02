@@ -3,7 +3,6 @@ import { Github, Play, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import './App.css'
 
@@ -34,12 +33,19 @@ interface DashboardItem {
   execution_session: DevinSession | null
 }
 
+interface Repository {
+  name: string
+  full_name: string
+  owner: string
+  private: boolean
+  description: string
+}
+
 function App() {
   const [issues, setIssues] = useState<DashboardItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [owner, setOwner] = useState('alexandertmills')
-  const [repo, setRepo] = useState('devin-issues-automation')
-  const [githubToken, setGithubToken] = useState('')
+  const [repositories, setRepositories] = useState<Repository[]>([])
+  const [selectedRepository, setSelectedRepository] = useState('')
   const [githubAppStatus, setGithubAppStatus] = useState<{
     configured: boolean
     message: string
@@ -66,17 +72,33 @@ function App() {
     }
   }
 
+  const fetchRepositories = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/app/repositories`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch repositories: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setRepositories(data.repositories || [])
+    } catch (err) {
+      console.error('Error fetching repositories:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch repositories')
+    }
+  }
+
   const fetchIssues = async () => {
+    if (!selectedRepository) {
+      setError('Please select a repository first')
+      return
+    }
+    
+    const [owner, repo] = selectedRepository.split('/')
     setLoading(true)
     setError(null)
     try {
       const url = `${API_BASE}/issues/${owner}/${repo}?state=all&limit=10`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-      }
-      
-      if (githubToken) {
-        headers['X-GitHub-Token'] = githubToken
       }
       
       const response = await fetch(url, { headers })
@@ -159,17 +181,36 @@ function App() {
     fetchGithubAppStatus()
   }, [])
 
+  useEffect(() => {
+    if (githubAppStatus?.configured) {
+      fetchRepositories()
+    }
+  }, [githubAppStatus])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <Github className="h-8 w-8" />
-            GitHub Issues Automation
-          </h1>
-          <p className="text-gray-600">
-            Automate GitHub issue analysis and resolution using Devin AI
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <Github className="h-8 w-8" />
+                GitHub Issues Automation
+              </h1>
+              <p className="text-gray-600">
+                Automate GitHub issue analysis and resolution using Devin AI
+              </p>
+            </div>
+            <a
+              href="https://github.com/apps/devin-issues-integration-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Github className="h-4 w-4 mr-2" />
+              Install GitHub App
+            </a>
+          </div>
         </div>
 
         {githubAppStatus && (
@@ -203,23 +244,6 @@ function App() {
                   </ul>
                 </div>
               )}
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800 font-medium mb-2">
-                  Install GitHub App
-                </p>
-                <p className="text-sm text-blue-700 mb-2">
-                  To use this automation system, install our GitHub App on your repositories:
-                </p>
-                <a
-                  href="https://github.com/apps/devin-issues-integration-app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Github className="h-4 w-4 mr-2" />
-                  Install GitHub App
-                </a>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -232,43 +256,26 @@ function App() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-4 items-end">
-                <div className="flex-1">
-                  <Label htmlFor="owner">Repository Owner</Label>
-                  <Input
-                    id="owner"
-                    value={owner}
-                    onChange={(e) => setOwner(e.target.value)}
-                    placeholder="alexandertmills"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Label htmlFor="repo">Repository Name</Label>
-                  <Input
-                    id="repo"
-                    value={repo}
-                    onChange={(e) => setRepo(e.target.value)}
-                    placeholder="devin-issues-automation"
-                  />
-                </div>
-                <Button onClick={fetchIssues} disabled={loading}>
-                  {loading ? 'Loading...' : 'Fetch Issues'}
-                </Button>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label htmlFor="repository">Repository</Label>
+                <select
+                  id="repository"
+                  value={selectedRepository}
+                  onChange={(e) => setSelectedRepository(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select a repository...</option>
+                  {repositories.map((repo) => (
+                    <option key={repo.full_name} value={repo.full_name}>
+                      {repo.full_name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <Label htmlFor="github-token">GitHub Token (Optional)</Label>
-                <Input
-                  id="github-token"
-                  type="password"
-                  value={githubToken}
-                  onChange={(e) => setGithubToken(e.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (for private repos)"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Leave empty for public repositories. Required for private repositories.
-                </p>
-              </div>
+              <Button onClick={fetchIssues} disabled={loading || !selectedRepository}>
+                {loading ? 'Loading...' : 'Fetch Issues'}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -302,7 +309,7 @@ function App() {
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-1 flex items-center gap-2">
                       <a 
-                        href={item.issue.html_url || `https://github.com/${owner}/${repo}/issues/${item.issue.number}`}
+                        href={item.issue.html_url || `https://github.com/${selectedRepository}/issues/${item.issue.number}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 hover:underline"
