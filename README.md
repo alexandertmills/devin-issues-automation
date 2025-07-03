@@ -109,12 +109,6 @@ Our integration with Devin AI provides:
 
 ## 📈 Benefits & ROI
 
-### **Quantifiable Improvements**
-- **40% reduction** in planning meeting time
-- **60% fewer** poorly-defined issues entering development
-- **25% faster** feature delivery through better prioritization
-- **50% reduction** in development rework due to unclear requirements
-
 ### **Team Productivity Gains**
 - **Engineers** focus on well-scoped, high-confidence issues
 - **Product Managers** make data-driven prioritization decisions
