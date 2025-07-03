@@ -314,23 +314,34 @@ async def get_issue_with_confidence(
             DevinSession.session_type == "scope"
         ).order_by(DevinSession.created_at.desc())
     )
-    scope_session = scope_result.scalar_one_or_none()
+    scope_session = scope_result.scalars().first()
     
     current_confidence = "not yet"
     
     if scope_session and scope_session.confidence_score is not None:
         current_confidence = scope_session.confidence_score
     elif scope_session and devin_client:
+        print(f"DEBUG: Polling Devin API for session {scope_session.session_id}")
         devin_status = devin_client.get_session_status(scope_session.session_id)
+        print(f"DEBUG: Devin API response type: {type(devin_status)}")
+        print(f"DEBUG: Devin API response keys: {list(devin_status.keys()) if isinstance(devin_status, dict) else 'Not a dict'}")
         if devin_status and "structured_output" in devin_status:
             structured_output = devin_status["structured_output"]
+            print(f"DEBUG: Structured output found: {structured_output}")
+            print(f"DEBUG: Structured output type: {type(structured_output)}")
             if isinstance(structured_output, dict) and "confidence_score" in structured_output:
                 confidence_score = structured_output["confidence_score"]
+                print(f"DEBUG: Confidence score extracted: {confidence_score}")
                 scope_session.confidence_score = confidence_score
                 if "action_plan" in structured_output:
                     scope_session.action_plan = structured_output["action_plan"]
                 await db.commit()
                 current_confidence = confidence_score
+            else:
+                print(f"DEBUG: No confidence_score in structured_output or not a dict")
+                print(f"DEBUG: structured_output keys: {list(structured_output.keys()) if isinstance(structured_output, dict) else 'Not a dict'}")
+        else:
+            print(f"DEBUG: No structured_output in devin_status or devin_status is None")
     
     return {
         "issue_id": issue.id,
@@ -358,7 +369,7 @@ async def execute_issue(
             DevinSession.session_type == "scope"
         ).order_by(DevinSession.created_at.desc())
     )
-    scope_session = scope_result.scalar_one_or_none()
+    scope_session = scope_result.scalars().first()
     
     if not scope_session or not scope_session.action_plan:
         raise HTTPException(
