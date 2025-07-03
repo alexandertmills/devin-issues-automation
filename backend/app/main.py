@@ -683,6 +683,8 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "body": issue.body,
                 "state": issue.state,
                 "repository": issue.repository,
+                "ref_id_number": issue.ref_id_number or 0,
+                "html_url": issue.html_url,
                 "issue_state": await issue.get_state(db),
                 "created_at": issue.created_at,
                 "updated_at": issue.updated_at

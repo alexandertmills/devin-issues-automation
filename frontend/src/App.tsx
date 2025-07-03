@@ -102,6 +102,7 @@ function App() {
             repository: item.issue.repository,
             html_url: item.issue.html_url,
             number: item.issue.github_issue_id,
+            ref_id_number: item.issue.ref_id_number,
             created_at: item.issue.created_at,
             updated_at: item.issue.updated_at
           },
@@ -404,12 +405,12 @@ function App() {
                     >
                       {item.issue.title}
                     </a>
-                    {(item.issue.ref_id_number || item.issue.number) && (
+                    {item.issue.ref_id_number && item.issue.ref_id_number > 0 && (
                       <Badge 
                         variant="outline"
                         className="border-gray-400 text-gray-600 bg-gray-50"
                       >
-                        #{item.issue.ref_id_number || item.issue.number || 0}
+                        #{item.issue.ref_id_number}
                       </Badge>
                     )}
                     <Badge 
