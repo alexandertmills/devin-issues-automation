@@ -106,7 +106,7 @@ function App() {
           },
           scope_session: item.scope_session ? {
             ...item.scope_session,
-            analysis: item.scope_session.analysis || item.scope_session.action_plan
+            analysis: item.scope_session.analysis || item.scope_session.result
           } : null,
           execution_session: item.execution_session
         })) || []
