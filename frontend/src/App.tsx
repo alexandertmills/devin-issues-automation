@@ -271,12 +271,6 @@ function App() {
     setVerifiedUsername('')
   }
 
-  const getStatusBadge = (status: string | null) => {
-    const variant = status === 'completed' ? 'default' : 
-                   status === 'running' ? 'secondary' : 
-                   status === 'failed' ? 'destructive' : 'outline'
-    return <Badge variant={variant}>{status || 'pending'}</Badge>
-  }
 
   const getConfidenceColor = (score: number) => {
     if (score >= 70) {
@@ -425,7 +419,6 @@ function App() {
                       </div>
                     ) : item.issue.issue_state === 'scope-complete' ? (
                       <div className="flex items-center">
-                        <span className="text-sm text-green-600 font-medium">✅ Scoped</span>
                       </div>
                     ) : (
                       <Button
