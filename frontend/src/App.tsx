@@ -312,7 +312,7 @@ function App() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <Github className="h-8 w-8" />
-                GitHub Issues Automation
+                GitHub Issues Scoping With Devin
               </h1>
               <p className="text-gray-600">
                 Automate GitHub issue analysis and resolution using Devin AI
