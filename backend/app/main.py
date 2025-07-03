@@ -131,12 +131,15 @@ async def get_repository_issues(
             )
             existing_issue = result.scalar_one_or_none()
             
+            is_cowbell = devin_client.is_cowbell_issue(issue["title"], issue.get("body", "")) if devin_client else False
+            
             if existing_issue:
                 existing_issue.title = issue["title"]
                 existing_issue.body = issue.get("body", "")
                 existing_issue.state = issue["state"]
                 existing_issue.repository = f"{owner}/{repo}"
                 existing_issue.html_url = issue["html_url"]
+                existing_issue.is_cowbell_issue = is_cowbell
                 stored_issue = existing_issue
             else:
                 new_issue = GitHubIssue(
@@ -145,7 +148,8 @@ async def get_repository_issues(
                     body=issue.get("body", ""),
                     state=issue["state"],
                     repository=f"{owner}/{repo}",
-                    html_url=issue["html_url"]
+                    html_url=issue["html_url"],
+                    is_cowbell_issue=is_cowbell
                 )
                 db.add(new_issue)
                 stored_issue = new_issue
@@ -165,6 +169,7 @@ async def get_repository_issues(
                 "state": stored_issue.state,
                 "repository": stored_issue.repository,
                 "issue_state": issue_state,
+                "is_cowbell_issue": stored_issue.is_cowbell_issue,
                 "created_at": stored_issue.created_at,
                 "updated_at": stored_issue.updated_at
             })
@@ -549,6 +554,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "state": issue.state,
                 "repository": issue.repository,
                 "issue_state": await issue.get_state(db),
+                "is_cowbell_issue": issue.is_cowbell_issue,
                 "created_at": issue.created_at,
                 "updated_at": issue.updated_at
             },

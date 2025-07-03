@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CowbellPlayer } from '@/components/CowbellPlayer'
+import { CowbellIcon } from '@/components/CowbellIcon'
 import './App.css'
 
 interface GitHubIssue {
@@ -16,6 +18,7 @@ interface GitHubIssue {
   body: string
   state: string
   repository: string
+  is_cowbell_issue: boolean
   created_at: string
   updated_at: string
 }
@@ -49,6 +52,8 @@ function App() {
     account?: string
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [cowbellEnabled, setCowbellEnabled] = useState(true)
+  const [playingCowbell, setPlayingCowbell] = useState<number | null>(null)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -153,6 +158,16 @@ function App() {
     } else {
       return 'bg-red-500'
     }
+  }
+
+  const handleCowbellPlay = (issueId: number) => {
+    if (cowbellEnabled) {
+      setPlayingCowbell(issueId)
+    }
+  }
+
+  const handleCowbellComplete = () => {
+    setPlayingCowbell(null)
   }
 
   useEffect(() => {
@@ -309,6 +324,13 @@ function App() {
                       >
                         {item.issue.title}
                       </a>
+                      {item.issue.is_cowbell_issue && (
+                        <CowbellIcon 
+                          isAnimated={playingCowbell === item.issue.id}
+                          className="cursor-pointer"
+                          onClick={() => handleCowbellPlay(item.issue.id)}
+                        />
+                      )}
                       <Badge variant="outline">#{item.issue.number}</Badge>
                       <Badge 
                         variant="outline"
@@ -352,10 +374,49 @@ function App() {
                 <p className="text-gray-700 text-sm line-clamp-3">
                   {item.issue.body || 'No description provided'}
                 </p>
+                {item.issue.is_cowbell_issue && (
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      🎵 This issue needs more cowbell! (SNL reference detected)
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
+      </div>
+      
+      {/* Cowbell Audio Players */}
+      {issues.filter(item => item.issue.is_cowbell_issue).map(item => (
+        <CowbellPlayer
+          key={item.issue.id}
+          shouldPlay={playingCowbell === item.issue.id}
+          onPlayComplete={handleCowbellComplete}
+        />
+      ))}
+      
+      {/* Cowbell Settings */}
+      <div className="fixed bottom-4 right-4">
+        <Card className="w-64">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Cowbell Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="cowbell-enabled"
+                checked={cowbellEnabled}
+                onChange={(e) => setCowbellEnabled(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="cowbell-enabled" className="text-sm">
+                Enable cowbell effects
+              </Label>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

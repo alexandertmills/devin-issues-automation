@@ -51,8 +51,36 @@ class DevinClient:
             print(f"Error getting session status: {e}")
             return None
     
+    def is_cowbell_issue(self, issue_title: str, issue_body: str) -> bool:
+        """Check if an issue is related to cowbell (SNL reference)"""
+        cowbell_keywords = ['cowbell', 'moar cowbell', 'more cowbell', 'needs moar cowbell']
+        text_to_check = f"{issue_title} {issue_body}".lower()
+        return any(keyword in text_to_check for keyword in cowbell_keywords)
+    
     def generate_scope_prompt(self, issue_title: str, issue_body: str, repo_name: str) -> str:
         """Generate a prompt for scoping an issue"""
+        if self.is_cowbell_issue(issue_title, issue_body):
+            return f"""
+This appears to be a cowbell-related issue (referencing the famous SNL sketch)!
+
+Repository: {repo_name}
+Issue Title: {issue_title}
+Issue Description: {issue_body}
+
+For this humorous cowbell request, please provide:
+CONFIDENCE_SCORE: 15
+COMPLEXITY: Low
+ACTION_PLAN: 
+1. Add cowbell sound effect to frontend assets
+2. Create cowbell detection logic in issue processing
+3. Implement audio playback component in React dashboard
+4. Add visual cowbell icon/animation for matching issues
+5. Update issue display to trigger cowbell effects
+6. Add toggle to enable/disable cowbell feature
+
+This is a fun easter egg feature that adds personality to the system while maintaining professional functionality.
+"""
+        
         return f"""
 Please analyze this GitHub issue and provide:
 1. A confidence score (0-100) for how well-defined and actionable this issue is
