@@ -117,8 +117,6 @@ Our integration with Devin AI provides:
 
 ---
 
----
-
 ## 🛠️ API Reference
 
 ### Core Endpoints
