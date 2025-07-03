@@ -182,10 +182,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (githubAppStatus?.configured) {
-      fetchRepositories()
-    }
-  }, [githubAppStatus])
+    fetchRepositories()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
