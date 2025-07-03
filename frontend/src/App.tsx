@@ -409,13 +409,13 @@ function App() {
                 </div>
               </CardHeader>
               <CardContent className="flex h-full">
-                <div className="content-container flex-1 pr-6">
+                <div className="content-container w-3/5 pr-6">
                   <p className="text-gray-700 text-sm line-clamp-3">
                     {item.issue.body || 'No description provided'}
                   </p>
                 </div>
                 
-                <div className="scope-container w-80 flex flex-col justify-center items-end">
+                <div className="scope-container w-2/5 flex flex-col justify-center items-end">
                   {item.scope_session && item.scope_session.confidence_score !== null ? (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
