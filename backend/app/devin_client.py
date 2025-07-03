@@ -43,7 +43,7 @@ class DevinClient:
     
     def get_session_status(self, session_id: str) -> Optional[Dict]:
         """Get the status of a Devin session"""
-        url = f"{self.base_url}/sessions/{session_id}"
+        url = f"{self.base_url}/session/{session_id}"
         
         get_headers = {
             "Authorization": f"Bearer {self.api_key}"
