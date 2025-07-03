@@ -32,7 +32,7 @@ export const CowbellPlayer: React.FC<CowbellPlayerProps> = ({
       onEnded={handleEnded}
       style={{ display: 'none' }}
     >
-      <source src="/cowbell.mp3" type="audio/mpeg" />
+      <source src="/cowbell.wav" type="audio/wav" />
       Your browser does not support the audio element.
     </audio>
   );
