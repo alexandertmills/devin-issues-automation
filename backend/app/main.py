@@ -660,7 +660,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
             select(DevinSession).where(
                 DevinSession.github_issue_id == issue.id,
                 DevinSession.session_type == "scope"
-            ).order_by(DevinSession.created_at.desc())
+            ).order_by(DevinSession.created_at.desc()).limit(1)
         )
         scope_session = scope_result.scalar_one_or_none()
         
@@ -668,7 +668,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
             select(DevinSession).where(
                 DevinSession.github_issue_id == issue.id,
                 DevinSession.session_type == "execute"
-            ).order_by(DevinSession.created_at.desc())
+            ).order_by(DevinSession.created_at.desc()).limit(1)
         )
         exec_session = exec_result.scalar_one_or_none()
         
@@ -689,6 +689,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "status": scope_session.status if scope_session else None,
                 "confidence_score": scope_session.confidence_score if scope_session else None,
                 "action_plan": scope_session.action_plan if scope_session else None,
+                "result": scope_session.result if scope_session else None,
                 "created_at": scope_session.created_at if scope_session else None
             } if scope_session else None,
             "execution_session": {
