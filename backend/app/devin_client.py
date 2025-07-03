@@ -16,13 +16,15 @@ class DevinClient:
             "Content-Type": "application/json"
         }
     
-    def create_session(self, prompt: str) -> Optional[Dict]:
+    def create_session(self, prompt: str, title: str = None) -> Optional[Dict]:
         """Create a new Devin session"""
         url = f"{self.base_url}/sessions"
         payload = {
             "prompt": prompt,
             "unlisted": True
         }
+        if title:
+            payload["title"] = title
         
         try:
             print(f"Making request to: {url}")
@@ -41,32 +43,54 @@ class DevinClient:
     
     def get_session_status(self, session_id: str) -> Optional[Dict]:
         """Get the status of a Devin session"""
-        url = f"{self.base_url}/sessions/{session_id}"
+        url = f"{self.base_url}/session/{session_id}"
+        
+        get_headers = {
+            "Authorization": f"Bearer {self.api_key}"
+        }
         
         try:
-            response = requests.get(url, headers=self.headers)
+            print(f"DEBUG: Making GET request to: {url}")
+            print(f"DEBUG: Headers: {get_headers}")
+            response = requests.get(url, headers=get_headers)
+            print(f"DEBUG: Response status code: {response.status_code}")
+            print(f"DEBUG: Response headers: {dict(response.headers)}")
+            if response.status_code != 200:
+                print(f"DEBUG: Response text: {response.text}")
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            print(f"DEBUG: Successfully retrieved session data with keys: {list(result.keys())}")
+            return result
         except requests.RequestException as e:
             print(f"Error getting session status: {e}")
+            print(f"DEBUG: Request URL was: {url}")
+            print(f"DEBUG: Request headers were: {get_headers}")
             return None
     
     def generate_scope_prompt(self, issue_title: str, issue_body: str, repo_name: str) -> str:
-        """Generate a prompt for scoping an issue"""
+        """Generate a prompt for scoping an issue with structured output"""
         return f"""
-Please analyze this GitHub issue and provide:
-1. A confidence score (0-100) for how well-defined and actionable this issue is
-2. A detailed action plan for implementing the solution
-3. An estimate of complexity (Low/Medium/High)
+Please analyze this GitHub issue and provide a confidence score for how well-defined and actionable it is. Update the structured output immediately when you have your analysis.
+
+IMPORTANT: Do NOT open any pull requests or make any code changes. This is only an evaluation task.
 
 Repository: {repo_name}
 Issue Title: {issue_title}
 Issue Description: {issue_body}
 
-Please provide your analysis in the following format:
-CONFIDENCE_SCORE: [0-100]
-COMPLEXITY: [Low/Medium/High]
-ACTION_PLAN: [Detailed step-by-step plan]
+Please provide your analysis in this structured output format:
+{{
+    "confidence_score": 85,
+    "complexity": "Medium",
+    "action_plan": "Detailed step-by-step plan for implementation",
+    "analysis": "Brief analysis of the issue"
+}}
+
+The confidence_score should be a number from 0-100 representing how well-defined and actionable this issue is.
+Complexity should be "Low", "Medium", or "High".
+Please update the structured output as soon as you complete your analysis.
+
+Remember: This is ONLY an evaluation - do not implement anything or create pull requests.
 """
     
     def generate_execution_prompt(self, issue_title: str, issue_body: str, action_plan: str, repo_name: str) -> str:

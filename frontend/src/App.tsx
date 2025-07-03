@@ -54,6 +54,7 @@ function App() {
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [verificationMessage, setVerificationMessage] = useState('')
   const [verifiedUsername, setVerifiedUsername] = useState('')
+  const [scopingIssues, setScopingIssues] = useState<Set<number>>(new Set())
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -110,6 +111,9 @@ function App() {
 
   const scopeIssue = async (issueId: number) => {
     try {
+      console.log(`Starting scope for issue ${issueId}`)
+      setScopingIssues(prev => new Set(prev).add(issueId))
+      
       const response = await fetch(`${API_BASE}/issues/${issueId}/scope`, {
         method: 'POST',
         headers: {
@@ -138,10 +142,69 @@ function App() {
             }
           : item
       ))
+      
+      startPollingForConfidence(issueId)
     } catch (err) {
       console.error('Error scoping issue:', err)
+      setScopingIssues(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(issueId)
+        return newSet
+      })
       setError(err instanceof Error ? err.message : 'Failed to scope issue')
     }
+  }
+
+  const startPollingForConfidence = (issueId: number) => {
+    console.log(`Starting polling for issue ${issueId}`)
+    const pollInterval = setInterval(async () => {
+      try {
+        console.log(`Polling for confidence score for issue ${issueId}`)
+        const response = await fetch(`${API_BASE}/issues/${issueId}`)
+        
+        if (!response.ok) {
+          console.error(`Polling failed for issue ${issueId}:`, response.statusText)
+          return
+        }
+        
+        const data = await response.json()
+        console.log(`Polling response for issue ${issueId}:`, data)
+        
+        if (data.current_confidence !== "not yet") {
+          console.log(`Confidence score received for issue ${issueId}:`, data.current_confidence)
+          clearInterval(pollInterval)
+          setScopingIssues(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(issueId)
+            return newSet
+          })
+          
+          setIssues(prev => prev.map(item => 
+            item.issue.id === issueId && item.scope_session
+              ? { 
+                  ...item, 
+                  scope_session: { 
+                    ...item.scope_session,
+                    confidence_score: data.current_confidence,
+                    status: 'completed'
+                  } 
+                }
+              : item
+          ))
+        }
+      } catch (err) {
+        console.error(`Error polling for issue ${issueId}:`, err)
+      }
+    }, 10000)
+    
+    setTimeout(() => {
+      clearInterval(pollInterval)
+      setScopingIssues(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(issueId)
+        return newSet
+      })
+    }, 300000)
   }
 
   const verifyInstallation = async () => {
@@ -320,9 +383,14 @@ function App() {
                   </div>
                   
                   <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                    {item.scope_session ? (
+                    {scopingIssues.has(item.issue.id) ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm text-gray-600">scoping in progress...</span>
+                      </div>
+                    ) : item.scope_session ? (
                       <div className="flex items-center">
-                        {item.scope_session.status !== 'completed' && getStatusBadge(item.scope_session.status)}
+                        {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
                         {item.scope_session.confidence_score !== null && (
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
