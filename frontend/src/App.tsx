@@ -26,6 +26,7 @@ interface DevinSession {
   status: string | null
   confidence_score: number | null
   action_plan: string | null
+  analysis: string | null
   created_at: string | null
 }
 
@@ -137,8 +138,9 @@ function App() {
                 status: data.status,
                 confidence_score: null,
                 action_plan: null,
+                analysis: null,
                 created_at: new Date().toISOString()
-              } 
+              }
             }
           : item
       ))
@@ -186,6 +188,7 @@ function App() {
                   scope_session: { 
                     ...item.scope_session,
                     confidence_score: data.current_confidence,
+                    analysis: data.analysis,
                     status: 'completed'
                   } 
                 }
@@ -356,7 +359,7 @@ function App() {
           )}
 
           {issues.map((item) => (
-            <Card key={item.issue.id} className="hover:shadow-md transition-shadow">
+            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -391,14 +394,6 @@ function App() {
                     ) : item.scope_session ? (
                       <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
-                        {item.scope_session.confidence_score !== null && (
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
-                            <p className="text-xs text-gray-600">
-                              Confidence: {item.scope_session.confidence_score}%
-                            </p>
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <Button
@@ -413,10 +408,31 @@ function App() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 text-sm line-clamp-3">
-                  {item.issue.body || 'No description provided'}
-                </p>
+              <CardContent className="flex">
+                <div className="w-3/5 pr-4">
+                  <p className="text-gray-700 text-sm line-clamp-3">
+                    {item.issue.body || 'No description provided'}
+                  </p>
+                </div>
+                <div className="w-2/5 flex justify-end">
+                  {item.scope_session && item.scope_session.confidence_score !== null && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
+                        <p className="text-xs text-gray-600">
+                          Confidence: {item.scope_session.confidence_score}%
+                        </p>
+                      </div>
+                      {item.scope_session.analysis && (
+                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-xs">
+                          <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
+                          <p className="text-sm text-blue-800 font-medium mb-1">Devin's Analysis:</p>
+                          <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
