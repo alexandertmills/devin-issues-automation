@@ -60,7 +60,13 @@ async def sync_user_repositories():
                 print(f"Syncing repositories for user: {user.username}")
                 
                 try:
-                    repositories = github_client.get_installation_repositories(user.installation_id)
+                    # Create a user-specific GitHub client with the correct installation_id
+                    user_github_client = GitHubClient(
+                        app_id=os.getenv("Github_App_app_id"),
+                        private_key=os.getenv("GITHUB_PEM"),
+                        installation_id=user.installation_id
+                    )
+                    repositories = user_github_client.get_installation_repositories(user.installation_id)
                     
                     for repo_data in repositories:
                         repo_name = repo_data.get('name')
@@ -175,7 +181,25 @@ async def get_repository_issues(
         if github_token:
             client = GitHubClient(token=github_token)
         else:
-            client = github_client
+            # Look up the installation_id from the database based on the repository owner
+            user_result = await db.execute(
+                select(GitHubUser).where(GitHubUser.username == owner)
+            )
+            github_user = user_result.scalar_one_or_none()
+            
+            if not github_user or not github_user.installation_id:
+                return {
+                    "error": f"No GitHub user found for owner '{owner}' or user has no installation_id",
+                    "owner": owner,
+                    "repo": repo
+                }
+            
+            # Create GitHub client with the user's installation_id from database
+            client = GitHubClient(
+                app_id=os.getenv("Github_App_app_id"),
+                private_key=os.getenv("GITHUB_PEM"),
+                installation_id=github_user.installation_id
+            )
             
         issues = client.get_repository_issues(owner, repo, state)
         
@@ -833,59 +857,29 @@ async def webhook_status():
     }
 
 @app.get("/app/repositories")
-async def get_app_repositories():
-    """Get repositories accessible to the GitHub App installation and sync to database"""
+async def get_app_repositories(db: AsyncSession = Depends(get_db)):
+    """Get repositories from database for all users"""
     try:
-        if not github_client or not hasattr(github_client, 'app_id'):
-            raise HTTPException(status_code=503, detail="GitHub App not configured")
+        # Fetch all repositories from database with their associated users
+        result = await db.execute(
+            select(Repository, GitHubUser).join(GitHubUser, Repository.github_user == GitHubUser.id)
+        )
+        repo_user_pairs = result.all()
         
-        repositories = github_client.get_installation_repositories(github_client.installation_id)
-        
-        async with AsyncSessionLocal() as db:
-            try:
-                result = await db.execute(
-                    select(GitHubUser).where(GitHubUser.installation_id == github_client.installation_id)
-                )
-                user = result.scalar_one_or_none()
-                
-                if user:
-                    for repo_data in repositories:
-                        repo_name = repo_data.get('name')
-                        if not repo_name:
-                            continue
-                            
-                        existing_repo_result = await db.execute(
-                            select(Repository).where(
-                                Repository.name == repo_name,
-                                Repository.github_user == user.id
-                            )
-                        )
-                        existing_repo = existing_repo_result.scalar_one_or_none()
-                        
-                        if not existing_repo:
-                            # Create new repository
-                            new_repo = Repository(
-                                name=repo_name,
-                                github_user=user.id
-                            )
-                            db.add(new_repo)
-                    
-                    await db.commit()
-            except Exception as e:
-                print(f"Error syncing repositories to database: {e}")
-                await db.rollback()
+        repositories = []
+        for repo, user in repo_user_pairs:
+            repositories.append({
+                "name": repo.name,
+                "full_name": f"{user.username}/{repo.name}",
+                "owner": user.username,
+                "private": False,  # We don't store privacy info, assume public for now
+                "description": "",  # We don't store descriptions, leave empty for now
+                "user_id": user.id,
+                "installation_id": user.installation_id
+            })
         
         return {
-            "repositories": [
-                {
-                    "name": repo["name"],
-                    "full_name": repo["full_name"],
-                    "owner": repo["owner"]["login"],
-                    "private": repo["private"],
-                    "description": repo.get("description", "")
-                }
-                for repo in repositories
-            ]
+            "repositories": repositories
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching repositories: {str(e)}")

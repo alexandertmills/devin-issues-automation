@@ -15,6 +15,7 @@ sqlalchemy = "^2.0.41"
 asyncpg = "^0.30.0"
 pyjwt = "^2.10.1"
 cryptography = "^43.0.0"
+greenlet = "^3.2.3"
 
 
 [build-system]

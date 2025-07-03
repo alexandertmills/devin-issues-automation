@@ -31,7 +31,12 @@ if not DATABASE_URL:
             f"Missing: {', '.join(missing_creds)}"
         )
 
-ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://").replace("?sslmode=require", "")
+# For asyncpg, we need to remove all query parameters and handle SSL separately
+from urllib.parse import urlparse, parse_qs
+
+# Parse the URL to extract components
+parsed_url = urlparse(DATABASE_URL)
+ASYNC_DATABASE_URL = f"postgresql+asyncpg://{parsed_url.username}:{parsed_url.password}@{parsed_url.hostname}:{parsed_url.port or 5432}{parsed_url.path}"
 
 engine = create_async_engine(
     ASYNC_DATABASE_URL, 
