@@ -197,7 +197,7 @@ function App() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 items-end">
-              <div className="flex-1">
+              <div className="w-96">
                 <Label htmlFor="repository">Repository</Label>
                 <select
                   id="repository"
@@ -213,7 +213,11 @@ function App() {
                   ))}
                 </select>
               </div>
-              <Button onClick={fetchIssues} disabled={loading || !selectedRepository}>
+              <Button 
+                onClick={fetchIssues} 
+                disabled={loading || !selectedRepository}
+                className="bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
                 {loading ? 'Loading...' : 'Fetch Issues'}
               </Button>
             </div>
