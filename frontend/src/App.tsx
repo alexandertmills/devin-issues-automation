@@ -418,7 +418,7 @@ function App() {
                         </p>
                       </div>
                       {item.scope_session.analysis && (
-                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-sm self-end">
+                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-sm ml-auto">
                           <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
                           <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
                         </div>

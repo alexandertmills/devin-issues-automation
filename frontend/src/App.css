@@ -57,3 +57,10 @@
   border-left: 1px solid #e5e7eb;
   padding: 1rem;
 }
+
+.scope-container > div:last-child {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
