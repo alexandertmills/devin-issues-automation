@@ -76,7 +76,7 @@ Our integration with Devin AI provides:
 ### **Modern Full-Stack Design**
 - **Backend**: FastAPI with async PostgreSQL operations
 - **Frontend**: React + TypeScript with shadcn/ui components
-- **Database**: Neon PostgreSQL with automated migrations
+- **Database**: Neon PostgreSQL
 - **AI Integration**: Devin API for intelligent analysis
 - **Authentication**: GitHub App with JWT-based security
 
