@@ -211,37 +211,9 @@ function App() {
     }
   }
 
-  const loadDashboardIssues = async () => {
-    console.log('Loading issues from dashboard endpoint')
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`${API_BASE}/dashboard`)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch dashboard: ${response.statusText}`)
-      }
-      const data = await response.json()
-      console.log('Dashboard data loaded:', data)
-      
-      const transformedIssues: DashboardItem[] = data.dashboard?.map((item: any) => ({
-        issue: item.issue,
-        scope_session: item.scope_session,
-        execution_session: item.execution_session
-      })) || []
-      
-      setIssues(transformedIssues)
-      console.log(`Loaded ${transformedIssues.length} issues from dashboard`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard')
-      console.error('Error loading dashboard:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     fetchRepositories()
-    loadDashboardIssues()
   }, [])
 
   return (

@@ -751,59 +751,96 @@ async def webhook_status():
 @app.get("/app/repositories")
 async def get_app_repositories():
     """Get repositories accessible to the GitHub App installation and sync to database"""
+    print("DEBUG: Starting get_app_repositories endpoint")
+    
     try:
-        if not github_client or not hasattr(github_client, 'app_id'):
-            raise HTTPException(status_code=503, detail="GitHub App not configured")
-        
-        repositories = github_client.get_installation_repositories(github_client.installation_id)
-        
-        async with AsyncSessionLocal() as db:
+        if github_client and hasattr(github_client, 'app_id'):
+            print("DEBUG: GitHub client available, trying GitHub API")
             try:
-                result = await db.execute(
-                    select(GitHubUser).where(GitHubUser.installation_id == github_client.installation_id)
-                )
-                user = result.scalar_one_or_none()
+                repositories = github_client.get_installation_repositories(github_client.installation_id)
+                print(f"DEBUG: GitHub API returned {len(repositories)} repositories")
                 
-                if user:
-                    for repo_data in repositories:
-                        repo_name = repo_data.get('name')
-                        if not repo_name:
-                            continue
-                            
-                        existing_repo_result = await db.execute(
-                            select(Repository).where(
-                                Repository.name == repo_name,
-                                Repository.github_user == user.id
-                            )
+                if not repositories:
+                    print("DEBUG: GitHub API returned empty list, falling back to database")
+                    raise Exception("GitHub API returned no repositories, using database fallback")
+                
+                async with AsyncSessionLocal() as db:
+                    try:
+                        result = await db.execute(
+                            select(GitHubUser).where(GitHubUser.installation_id == github_client.installation_id)
                         )
-                        existing_repo = existing_repo_result.scalar_one_or_none()
+                        user = result.scalar_one_or_none()
                         
-                        if not existing_repo:
-                            # Create new repository
-                            new_repo = Repository(
-                                name=repo_name,
-                                github_user=user.id
-                            )
-                            db.add(new_repo)
-                    
-                    await db.commit()
-            except Exception as e:
-                print(f"Error syncing repositories to database: {e}")
-                await db.rollback()
-        
-        return {
-            "repositories": [
-                {
-                    "name": repo["name"],
-                    "full_name": repo["full_name"],
-                    "owner": repo["owner"]["login"],
-                    "private": repo["private"],
-                    "description": repo.get("description", "")
+                        if user:
+                            for repo_data in repositories:
+                                repo_name = repo_data.get('name')
+                                if not repo_name:
+                                    continue
+                                    
+                                existing_repo_result = await db.execute(
+                                    select(Repository).where(
+                                        Repository.name == repo_name,
+                                        Repository.github_user == user.id
+                                    )
+                                )
+                                existing_repo = existing_repo_result.scalar_one_or_none()
+                                
+                                if not existing_repo:
+                                    # Create new repository
+                                    new_repo = Repository(
+                                        name=repo_name,
+                                        github_user=user.id
+                                    )
+                                    db.add(new_repo)
+                        
+                        await db.commit()
+                    except Exception as e:
+                        print(f"Error syncing repositories to database: {e}")
+                        await db.rollback()
+                
+                return {
+                    "repositories": [
+                        {
+                            "name": repo["name"],
+                            "full_name": repo["full_name"],
+                            "owner": repo["owner"]["login"],
+                            "private": repo["private"],
+                            "description": repo.get("description", "")
+                        }
+                        for repo in repositories
+                    ]
                 }
-                for repo in repositories
-            ]
-        }
+            except Exception as github_error:
+                print(f"DEBUG: GitHub API error: {github_error}")
+                print("DEBUG: Falling back to database repositories")
+        else:
+            print("DEBUG: No GitHub client available, using database fallback")
+        
+        print("DEBUG: Executing database fallback query")
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(Repository, GitHubUser).join(GitHubUser, Repository.github_user == GitHubUser.id)
+            )
+            repo_user_pairs = result.all()
+            print(f"DEBUG: Database query returned {len(repo_user_pairs)} repository-user pairs")
+            
+            repositories = []
+            for repo, user in repo_user_pairs:
+                repo_data = {
+                    "name": repo.name,
+                    "full_name": f"{user.username}/{repo.name}",
+                    "owner": user.username,
+                    "private": False,  # Default assumption
+                    "description": f"Repository {repo.name} owned by {user.username}"
+                }
+                repositories.append(repo_data)
+                print(f"DEBUG: Added repository: {repo_data['full_name']}")
+            
+            print(f"DEBUG: Returning {len(repositories)} repositories from database")
+            return {"repositories": repositories}
+            
     except Exception as e:
+        print(f"DEBUG: Unexpected error in get_app_repositories: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching repositories: {str(e)}")
 
 @app.post("/app/repositories/sync")
