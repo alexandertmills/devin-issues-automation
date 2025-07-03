@@ -11,14 +11,15 @@ import hashlib
 import json
 from contextlib import asynccontextmanager
 
-from .database import get_db, create_tables
-from .models import GitHubIssue, DevinSession
+from .database import get_db, create_tables, AsyncSessionLocal
+from .models import GitHubIssue, DevinSession, GitHubUser, Repository
 from .github_client import GitHubClient
 from .devin_client import DevinClient
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
+    await sync_user_repositories()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -39,6 +40,61 @@ try:
 except ValueError as e:
     print(f"Warning: Devin client not initialized: {e}")
     devin_client = None
+
+async def sync_user_repositories():
+    """Sync repositories for all GitHub users with installation_id"""
+    print("Starting repository sync for all GitHub users...")
+    
+    async with AsyncSessionLocal() as db:
+        try:
+            result = await db.execute(select(GitHubUser))
+            users = result.scalars().all()
+            
+            for user in users:
+                if not user.installation_id:
+                    print(f"Skipping user {user.username} - no installation_id")
+                    continue
+                    
+                print(f"Syncing repositories for user: {user.username}")
+                
+                try:
+                    repositories = github_client.get_installation_repositories(user.installation_id)
+                    
+                    for repo_data in repositories:
+                        repo_name = repo_data.get('name')
+                        if not repo_name:
+                            continue
+                            
+                        existing_repo_result = await db.execute(
+                            select(Repository).where(
+                                Repository.name == repo_name,
+                                Repository.github_user == user.id
+                            )
+                        )
+                        existing_repo = existing_repo_result.scalar_one_or_none()
+                        
+                        if existing_repo:
+                            print(f"  Repository {repo_name} already exists, updating...")
+                        else:
+                            new_repo = Repository(
+                                name=repo_name,
+                                github_user=user.id
+                            )
+                            db.add(new_repo)
+                            print(f"  Added new repository: {repo_name}")
+                    
+                    await db.commit()
+                    print(f"Successfully synced repositories for {user.username}")
+                    
+                except Exception as e:
+                    print(f"Error syncing repositories for user {user.username}: {e}")
+                    await db.rollback()
+                    continue
+                    
+        except Exception as e:
+            print(f"Error during repository sync: {e}")
+            
+    print("Repository sync completed")
 
 @app.get("/healthz")
 async def healthz():

@@ -97,16 +97,36 @@ class GitHubClient:
             print(f"Error fetching issue {issue_number}: {e}")
             return None
     
-    def get_installation_repositories(self) -> List[Dict]:
-        """Get repositories accessible to the GitHub App installation"""
-        url = f"{self.base_url}/installation/repositories"
-        params = {"per_page": 100}
+    def get_installation_repositories(self, installation_id: str) -> List[Dict]:
+        """Get repositories accessible to a GitHub App installation"""
+        repositories = []
+        page = 1
+        per_page = 100
         
-        try:
-            response = requests.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            return data.get('repositories', [])
-        except requests.RequestException as e:
-            print(f"Error fetching installation repositories: {e}")
-            return []
+        while True:
+            url = f"{self.base_url}/installation/repositories"
+            params = {"per_page": per_page, "page": page}
+            
+            try:
+                temp_client = GitHubClient(
+                    app_id=self.app_id,
+                    private_key=self.private_key, 
+                    installation_id=installation_id
+                )
+                
+                response = requests.get(url, headers=temp_client.headers, params=params)
+                response.raise_for_status()
+                data = response.json()
+                
+                repositories.extend(data.get('repositories', []))
+                
+                if len(data.get('repositories', [])) < per_page:
+                    break
+                    
+                page += 1
+                
+            except requests.RequestException as e:
+                print(f"Error fetching installation repositories for {installation_id}: {e}")
+                break
+                
+        return repositories
