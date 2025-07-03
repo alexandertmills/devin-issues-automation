@@ -248,6 +248,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Ready to transform your issue management?**
 
-[🚀 Get Started](https://github.com/alexandertmills/devin-issues-automation#quick-start) | [📖 Documentation](WORKSPACE_SETUP.md) | [💬 Support](https://github.com/alexandertmills/devin-issues-automation/issues)
+[📖 Documentation](WORKSPACE_SETUP.md) | [💬 Support](https://github.com/alexandertmills/devin-issues-automation/issues)
 
 </div>
