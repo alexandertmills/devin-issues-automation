@@ -404,7 +404,6 @@ function App() {
                       >
                         {item.issue.title}
                       </a>
-                      <Badge variant="outline">#{item.issue.number}</Badge>
                       <Badge 
                         variant="outline"
                         className={item.issue.state === 'open' 
