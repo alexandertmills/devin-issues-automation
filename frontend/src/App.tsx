@@ -17,6 +17,7 @@ interface GitHubIssue {
   body: string
   state: string
   repository: string
+  issue_state: string
   created_at: string
   updated_at: string
 }
@@ -83,33 +84,33 @@ function App() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${API_BASE}/dashboard`)
+      const [owner, repo] = selectedRepository.split('/')
+      const response = await fetch(`${API_BASE}/issues/${owner}/${repo}`)
       if (!response.ok) {
-        throw new Error(`Failed to fetch dashboard data: ${response.statusText}`)
+        throw new Error(`Failed to fetch issues: ${response.statusText}`)
       }
       const data = await response.json()
       
-      const filteredIssues: DashboardItem[] = data.dashboard
-        ?.filter((item: any) => item.issue.repository === selectedRepository)
-        ?.map((item: any) => ({
-          issue: {
-            id: item.issue.id,
-            github_issue_id: item.issue.github_issue_id,
-            title: item.issue.title,
-            body: item.issue.body,
-            state: item.issue.state,
-            repository: item.issue.repository,
-            html_url: item.issue.html_url,
-            number: item.issue.github_issue_id,
-            created_at: item.issue.created_at,
-            updated_at: item.issue.updated_at
-          },
-          scope_session: item.scope_session ? {
-            ...item.scope_session,
-            analysis: item.scope_session.analysis || item.scope_session.result
-          } : null,
-          execution_session: item.execution_session
-        })) || []
+      const filteredIssues: DashboardItem[] = data.issues?.map((item: any) => ({
+        issue: {
+          id: item.id,
+          github_issue_id: item.github_issue_id,
+          title: item.title,
+          body: item.body,
+          state: item.state,
+          repository: item.repository,
+          issue_state: item.issue_state,
+          html_url: item.html_url,
+          number: item.number,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        },
+        scope_session: item.scope_session ? {
+          ...item.scope_session,
+          analysis: item.scope_session.analysis || item.scope_session.result
+        } : null,
+        execution_session: null
+      })) || []
       
       setIssues(filteredIssues)
       
@@ -123,8 +124,8 @@ function App() {
       })
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
-      console.error('Error fetching dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch issues')
+      console.error('Error fetching issues:', err)
     } finally {
       setLoading(false)
     }
@@ -270,12 +271,6 @@ function App() {
     setVerifiedUsername('')
   }
 
-  const getStatusBadge = (status: string | null) => {
-    const variant = status === 'completed' ? 'default' : 
-                   status === 'running' ? 'secondary' : 
-                   status === 'failed' ? 'destructive' : 'outline'
-    return <Badge variant={variant}>{status || 'pending'}</Badge>
-  }
 
   const getConfidenceColor = (score: number) => {
     if (score >= 70) {
@@ -420,14 +415,13 @@ function App() {
                 
                 <div className="scope-container w-2/5 flex flex-col justify-start items-end">
                   <div className="flex items-center gap-2 mb-2">
-                    {scopingIssues.has(item.issue.id) ? (
+                    {scopingIssues.has(item.issue.id) || item.issue.issue_state === 'scope-in-progress' ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                         <span className="text-sm text-gray-600">scoping in progress...</span>
                       </div>
-                    ) : item.scope_session ? (
+                    ) : item.issue.issue_state === 'scope-complete' ? (
                       <div className="flex items-center">
-                        {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
                       </div>
                     ) : (
                       <Button
