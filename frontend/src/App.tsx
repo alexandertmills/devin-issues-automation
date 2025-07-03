@@ -46,31 +46,10 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [repositories, setRepositories] = useState<Repository[]>([])
   const [selectedRepository, setSelectedRepository] = useState('')
-  const [githubAppStatus, setGithubAppStatus] = useState<{
-    configured: boolean
-    message: string
-    missing_credentials?: string[]
-    app_id?: string
-    installation_id?: string
-    account?: string
-  } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
-  const fetchGithubAppStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/github-app-status`)
-      const data = await response.json()
-      setGithubAppStatus(data)
-    } catch (error) {
-      console.error('Error fetching GitHub App status:', error)
-      setGithubAppStatus({
-        configured: false,
-        message: 'Error fetching GitHub App status'
-      })
-    }
-  }
 
   const fetchRepositories = async () => {
     try {
@@ -177,15 +156,10 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    fetchGithubAppStatus()
-  }, [])
 
   useEffect(() => {
-    if (githubAppStatus?.configured) {
-      fetchRepositories()
-    }
-  }, [githubAppStatus])
+    fetchRepositories()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -213,40 +187,6 @@ function App() {
           </div>
         </div>
 
-        {githubAppStatus && (
-          <Card className={`mb-6 ${
-            githubAppStatus.configured 
-              ? 'border-green-200 bg-green-50' 
-              : 'border-yellow-200 bg-yellow-50'
-          }`}>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${
-                  githubAppStatus.configured ? 'bg-green-500' : 'bg-yellow-500'
-                }`}></div>
-                <h3 className="font-medium">
-                  {githubAppStatus.configured ? 'GitHub App Connected' : 'GitHub App Not Configured'}
-                </h3>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">{githubAppStatus.message}</p>
-              {githubAppStatus.configured && githubAppStatus.account && (
-                <p className="text-sm text-gray-500 mt-1">
-                  Connected to: {githubAppStatus.account}
-                </p>
-              )}
-              {!githubAppStatus.configured && githubAppStatus.missing_credentials && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600">Missing credentials:</p>
-                  <ul className="text-sm text-gray-500 list-disc list-inside">
-                    {githubAppStatus.missing_credentials.map(cred => (
-                      <li key={cred}>{cred}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         <Card className="mb-6">
           <CardHeader>
