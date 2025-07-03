@@ -104,7 +104,10 @@ function App() {
             created_at: item.issue.created_at,
             updated_at: item.issue.updated_at
           },
-          scope_session: item.scope_session,
+          scope_session: item.scope_session ? {
+            ...item.scope_session,
+            analysis: item.scope_session.analysis || item.scope_session.action_plan
+          } : null,
           execution_session: item.execution_session
         })) || []
       
