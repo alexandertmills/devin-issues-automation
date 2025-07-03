@@ -10,9 +10,9 @@ load_dotenv()
 class GitHubClient:
     def __init__(self, token: str = None, app_id: str = None, private_key: str = None, installation_id: str = None):
         self.token = token or os.getenv("GITHUB_TOKEN")
-        self.app_id = app_id or os.getenv("GITHUB_APP_ID")
-        self.private_key = private_key or os.getenv("GITHUB_APP_PRIVATE_KEY")
-        self.installation_id = installation_id or os.getenv("GITHUB_APP_INSTALLATION_ID")
+        self.app_id = app_id or os.getenv("Github_App_app_id")
+        self.private_key = private_key or os.getenv("GITHUB_PEM")
+        self.installation_id = installation_id or os.getenv("github_app_install_id")
         self.base_url = "https://api.github.com"
         self.headers = {
             "Accept": "application/vnd.github.v3+json"
