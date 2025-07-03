@@ -420,7 +420,7 @@ function App() {
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                         <span className="text-sm text-gray-600">scoping in progress...</span>
                       </div>
-                    ) : item.issue.issue_state === 'scope-complete' ? (
+                    ) : item.scope_session ? (
                       <div className="flex items-center">
                       </div>
                     ) : (
