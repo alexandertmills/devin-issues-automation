@@ -3,7 +3,9 @@ import { Github, Play, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import './App.css'
 
 interface GitHubIssue {
@@ -47,6 +49,11 @@ function App() {
   const [repositories, setRepositories] = useState<Repository[]>([])
   const [selectedRepository, setSelectedRepository] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [installationId, setInstallationId] = useState('')
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [verificationMessage, setVerificationMessage] = useState('')
+  const [verifiedUsername, setVerifiedUsername] = useState('')
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -137,7 +144,45 @@ function App() {
     }
   }
 
+  const verifyInstallation = async () => {
+    if (!installationId.trim()) {
+      setVerificationStatus('error')
+      setVerificationMessage('Please enter an installation ID')
+      return
+    }
 
+    setVerificationStatus('loading')
+    try {
+      const response = await fetch(`${API_BASE}/verify-installation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ installation_id: installationId.trim() })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok && data.success) {
+        setVerificationStatus('success')
+        setVerificationMessage(data.message)
+        setVerifiedUsername(data.username)
+      } else {
+        setVerificationStatus('error')
+        setVerificationMessage(data.detail || 'Verification failed')
+      }
+    } catch (err) {
+      setVerificationStatus('error')
+      setVerificationMessage('Network error occurred')
+    }
+  }
+
+  const resetModal = () => {
+    setInstallationId('')
+    setVerificationStatus('idle')
+    setVerificationMessage('')
+    setVerifiedUsername('')
+  }
 
   const getStatusBadge = (status: string | null) => {
     const variant = status === 'completed' ? 'default' : 
@@ -175,15 +220,16 @@ function App() {
                 Automate GitHub issue analysis and resolution using Devin AI
               </p>
             </div>
-            <a
-              href="https://github.com/apps/devin-issues-integration-app"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              onClick={() => {
+                resetModal()
+                setIsModalOpen(true)
+              }}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <Github className="h-4 w-4 mr-2" />
-              Install GitHub App
-            </a>
+              Add GitHub User
+            </Button>
           </div>
         </div>
 
@@ -308,6 +354,115 @@ function App() {
           ))}
         </div>
       </div>
+
+      {/* GitHub User Setup Modal */}
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        setIsModalOpen(open)
+        if (!open) resetModal()
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add GitHub User</DialogTitle>
+            <DialogDescription>
+              Follow these steps to add a new GitHub user to the automation system
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Step 1 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                Install GitHub App
+              </h3>
+              <p className="text-sm text-gray-600">
+                Click the button below to install our GitHub App on your repositories:
+              </p>
+              <a
+                href="https://github.com/apps/devin-issues-integration-app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+              >
+                <Github className="h-4 w-4 mr-2" />
+                Install GitHub App
+              </a>
+              <img 
+                src="/screenshots/github-app-main.png" 
+                alt="GitHub App installation page"
+                className="w-full border rounded-md"
+              />
+            </div>
+
+            {/* Step 2 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                Select Repositories
+              </h3>
+              <p className="text-sm text-gray-600">
+                Choose which repositories you want to share with Devin:
+              </p>
+              <img 
+                src="/screenshots/repository-selection.png" 
+                alt="Repository selection page"
+                className="w-full border rounded-md"
+              />
+            </div>
+
+            {/* Step 3 */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                Copy Installation ID
+              </h3>
+              <p className="text-sm text-gray-600">
+                After installation, copy the installation ID from the URL bar:
+              </p>
+              <img 
+                src="/screenshots/installation-url.png" 
+                alt="Installation ID in URL"
+                className="w-full border rounded-md"
+              />
+              
+              <div className="space-y-2">
+                <Label htmlFor="installation-id">Installation ID</Label>
+                <Input
+                  id="installation-id"
+                  value={installationId}
+                  onChange={(e) => setInstallationId(e.target.value)}
+                  placeholder="Enter installation ID (e.g., 73911812)"
+                  disabled={verificationStatus === 'loading'}
+                />
+              </div>
+              
+              <Button 
+                onClick={verifyInstallation}
+                disabled={verificationStatus === 'loading' || !installationId.trim()}
+                className="w-full"
+              >
+                {verificationStatus === 'loading' ? 'Verifying...' : 'Verify Installation'}
+              </Button>
+              
+              {verificationStatus === 'success' && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-800 font-medium">✅ Success!</p>
+                  <p className="text-sm text-green-700">
+                    User <strong>{verifiedUsername}</strong> has been added successfully.
+                  </p>
+                </div>
+              )}
+              
+              {verificationStatus === 'error' && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-800 font-medium">❌ Error</p>
+                  <p className="text-sm text-red-700">{verificationMessage}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -9,6 +9,8 @@ import requests
 import hmac
 import hashlib
 import json
+import jwt
+import time
 from contextlib import asynccontextmanager
 
 from .database import get_db, create_tables, AsyncSessionLocal
@@ -443,9 +445,9 @@ async def get_user_repositories(request: Request):
 async def get_github_app_status():
     """Get GitHub App authentication status and configuration"""
     try:
-        app_id = os.getenv("GITHUB_APP_ID")
-        private_key = os.getenv("GITHUB_APP_PRIVATE_KEY")
-        installation_id = os.getenv("GITHUB_APP_INSTALLATION_ID")
+        app_id = os.getenv("Github_App_app_id")
+        private_key = os.getenv("GITHUB_PEM")
+        installation_id = os.getenv("github_app_install_id")
         
         if not app_id or not private_key or not installation_id:
             return {
@@ -453,9 +455,9 @@ async def get_github_app_status():
                 "message": "GitHub App not configured",
                 "missing_credentials": [
                     key for key, value in {
-                        "GITHUB_APP_ID": app_id,
-                        "GITHUB_APP_PRIVATE_KEY": private_key,
-                        "GITHUB_APP_INSTALLATION_ID": installation_id
+                        "Github_App_app_id": app_id,
+                        "GITHUB_PEM": private_key,
+                        "github_app_install_id": installation_id
                     }.items() if not value
                 ],
                 "note": "Please configure GitHub App credentials to use GitHub App authentication"
@@ -809,3 +811,71 @@ async def sync_repositories():
         return {"message": "Repository sync completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error syncing repositories: {str(e)}")
+
+@app.post("/verify-installation")
+async def verify_installation(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify GitHub App installation ID and add new user"""
+    try:
+        data = await request.json()
+        installation_id = data.get("installation_id")
+        
+        if not installation_id:
+            raise HTTPException(status_code=400, detail="Installation ID is required")
+        
+        app_id = os.getenv("Github_App_app_id")
+        private_key = os.getenv("GITHUB_PEM")
+        
+        if not app_id or not private_key:
+            raise HTTPException(status_code=503, detail="GitHub App not configured")
+        
+        try:
+            now = int(time.time())
+            payload = {
+                'iat': now,
+                'exp': now + 600,  # 10 minutes
+                'iss': app_id
+            }
+            jwt_token = jwt.encode(payload, private_key, algorithm='RS256')
+            
+            test_url = f"https://api.github.com/app/installations/{installation_id}"
+            headers = {
+                "Authorization": f"Bearer {jwt_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            response = requests.get(test_url, headers=headers)
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Invalid installation ID")
+            
+            installation_data = response.json()
+            username = installation_data.get("account", {}).get("login")
+            
+            if not username:
+                raise HTTPException(status_code=400, detail="Could not fetch username from installation")
+            
+            result = await db.execute(
+                select(GitHubUser).where(GitHubUser.username == username)
+            )
+            existing_user = result.scalar_one_or_none()
+            
+            if existing_user:
+                existing_user.installation_id = installation_id
+                await db.commit()
+                return {"success": True, "username": username, "message": "User updated successfully"}
+            else:
+                new_user = GitHubUser(
+                    username=username,
+                    installation_id=installation_id
+                )
+                db.add(new_user)
+                await db.commit()
+                return {"success": True, "username": username, "message": "User added successfully"}
+                
+        except requests.RequestException as e:
+            raise HTTPException(status_code=400, detail=f"Failed to verify installation: {str(e)}")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Verification error: {str(e)}")

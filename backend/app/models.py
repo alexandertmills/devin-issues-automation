@@ -34,7 +34,7 @@ class GitHubIssue(Base):
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
-        most_recent_scope_session = result.scalar_one_or_none()
+        most_recent_scope_session = result.scalars().first()
         
         if not most_recent_scope_session:
             return "ready-to-scope"
