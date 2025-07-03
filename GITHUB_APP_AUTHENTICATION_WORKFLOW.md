@@ -51,6 +51,8 @@ GET /issues/{owner}/{repo}
 
 **Signing**: JWT is signed using the GitHub App's private key with RS256 algorithm
 
+**Important Dependency**: The `cryptography` package is required for RS256 algorithm support. This is a common recurring issue - if you encounter "Algorithm 'RS256' could not be found" errors, ensure `cryptography` is listed in `backend/pyproject.toml` dependencies.
+
 **Code Reference**: `backend/app/github_client.py` lines 42-51
 
 ```python
