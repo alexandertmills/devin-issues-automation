@@ -416,7 +416,7 @@ function App() {
                 </div>
                 
                 <div className="scope-container w-2/5 flex flex-col justify-center items-end">
-                  {item.scope_session && item.scope_session.confidence_score !== null ? (
+                  {item.scope_session && item.scope_session.confidence_score !== null && (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
@@ -431,10 +431,6 @@ function App() {
                           <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-gray-400 italic">
-                      Scope container ready
                     </div>
                   )}
                 </div>
