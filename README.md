@@ -117,32 +117,6 @@ Our integration with Devin AI provides:
 
 ---
 
-## 🔧 Configuration
-
-### Environment Variables
-
-**Backend (.env)**
-```bash
-# Database
-NEON_DATABASE_URL=postgresql://user:pass@host/db
-
-# GitHub App
-GITHUB_APP_ID=your_app_id
-GITHUB_APP_PRIVATE_KEY=your_private_key
-GITHUB_APP_INSTALLATION_ID=your_installation_id
-
-# Devin AI
-DEVIN_SERVICE_API_KEY=your_devin_api_key
-
-# Webhooks
-GITHUB_WEBHOOK_SECRET=your_webhook_secret
-```
-
-**Frontend (.env)**
-```bash
-VITE_API_BASE_URL=http://localhost:8000
-```
-
 ---
 
 ## 🛠️ API Reference
