@@ -945,7 +945,9 @@ async def verify_installation(
             if existing_user:
                 existing_user.installation_id = installation_id
                 await db.commit()
-                return {"success": True, "username": username, "message": "User updated successfully"}
+                # Sync repositories for all users (simple and works for 1-3 users)
+                await sync_user_repositories()
+                return {"success": True, "username": username, "message": "User updated and repositories synced successfully"}
             else:
                 new_user = GitHubUser(
                     username=username,
@@ -953,7 +955,9 @@ async def verify_installation(
                 )
                 db.add(new_user)
                 await db.commit()
-                return {"success": True, "username": username, "message": "User added successfully"}
+                # Sync repositories for all users (simple and works for 1-3 users)
+                await sync_user_repositories()
+                return {"success": True, "username": username, "message": "User added and repositories synced successfully"}
                 
         except requests.RequestException as e:
             raise HTTPException(status_code=400, detail=f"Failed to verify installation: {str(e)}")
