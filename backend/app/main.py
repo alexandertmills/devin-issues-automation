@@ -745,12 +745,46 @@ async def webhook_status():
 
 @app.get("/app/repositories")
 async def get_app_repositories():
-    """Get repositories accessible to the GitHub App installation"""
+    """Get repositories accessible to the GitHub App installation and sync to database"""
     try:
         if not github_client or not hasattr(github_client, 'app_id'):
             raise HTTPException(status_code=503, detail="GitHub App not configured")
         
         repositories = github_client.get_installation_repositories(github_client.installation_id)
+        
+        async with AsyncSessionLocal() as db:
+            try:
+                result = await db.execute(
+                    select(GitHubUser).where(GitHubUser.installation_id == github_client.installation_id)
+                )
+                user = result.scalar_one_or_none()
+                
+                if user:
+                    for repo_data in repositories:
+                        repo_name = repo_data.get('name')
+                        if not repo_name:
+                            continue
+                            
+                        existing_repo_result = await db.execute(
+                            select(Repository).where(
+                                Repository.name == repo_name,
+                                Repository.github_user == user.id
+                            )
+                        )
+                        existing_repo = existing_repo_result.scalar_one_or_none()
+                        
+                        if not existing_repo:
+                            # Create new repository
+                            new_repo = Repository(
+                                name=repo_name,
+                                github_user=user.id
+                            )
+                            db.add(new_repo)
+                    
+                    await db.commit()
+            except Exception as e:
+                print(f"Error syncing repositories to database: {e}")
+                await db.rollback()
         
         return {
             "repositories": [
