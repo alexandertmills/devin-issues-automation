@@ -750,7 +750,7 @@ async def get_app_repositories():
         if not github_client or not hasattr(github_client, 'app_id'):
             raise HTTPException(status_code=503, detail="GitHub App not configured")
         
-        repositories = github_client.get_installation_repositories()
+        repositories = github_client.get_installation_repositories(github_client.installation_id)
         
         return {
             "repositories": [
