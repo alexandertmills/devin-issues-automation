@@ -394,16 +394,6 @@ function App() {
                     ) : item.scope_session ? (
                       <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
-                        {item.scope_session.confidence_score !== null && (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
-                              <p className="text-xs text-gray-600">
-                                Confidence: {item.scope_session.confidence_score}%
-                              </p>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <Button
