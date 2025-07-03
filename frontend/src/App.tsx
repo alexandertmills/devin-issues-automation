@@ -360,32 +360,9 @@ function App() {
 
           {issues.map((item) => (
             <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow min-h-[200px]">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-1 flex items-center gap-2">
-                      <a 
-                        href={item.issue.html_url || `https://github.com/${selectedRepository}/issues/${item.issue.number}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {item.issue.title}
-                      </a>
-                      <Badge variant="outline">#{item.issue.number}</Badge>
-                      <Badge 
-                        variant="outline"
-                        className={item.issue.state === 'open' 
-                          ? 'border-red-500 text-red-700 bg-red-50' 
-                          : 'border-purple-500 text-purple-700 bg-purple-50'
-                        }
-                      >
-                        {item.issue.state}
-                      </Badge>
-                    </CardTitle>
-                  </div>
-                  
-                  <div className="flex-shrink-0 ml-4 flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-end">
+                  <div className="flex-shrink-0 flex items-center gap-2">
                     {scopingIssues.has(item.issue.id) ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -408,8 +385,28 @@ function App() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex h-full">
+              <CardContent className="flex h-full pt-0">
                 <div className="content-container w-3/5 pr-6">
+                  <CardTitle className="text-lg mb-3 flex items-center gap-2">
+                    <a 
+                      href={item.issue.html_url || `https://github.com/${selectedRepository}/issues/${item.issue.number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {item.issue.title}
+                    </a>
+                    <Badge variant="outline">#{item.issue.number}</Badge>
+                    <Badge 
+                      variant="outline"
+                      className={item.issue.state === 'open' 
+                        ? 'border-red-500 text-red-700 bg-red-50' 
+                        : 'border-purple-500 text-purple-700 bg-purple-50'
+                      }
+                    >
+                      {item.issue.state}
+                    </Badge>
+                  </CardTitle>
                   <p className="text-gray-700 text-sm line-clamp-3">
                     {item.issue.body || 'No description provided'}
                   </p>
