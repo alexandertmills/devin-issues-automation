@@ -359,7 +359,7 @@ function App() {
           )}
 
           {issues.map((item) => (
-            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow">
+            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow min-h-[200px]">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -408,14 +408,15 @@ function App() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex">
-                <div className="w-3/5 pr-4">
+              <CardContent className="flex h-full">
+                <div className="content-container flex-1 pr-6">
                   <p className="text-gray-700 text-sm line-clamp-3">
                     {item.issue.body || 'No description provided'}
                   </p>
                 </div>
-                <div className="w-2/5 flex justify-end">
-                  {item.scope_session && item.scope_session.confidence_score !== null && (
+                
+                <div className="scope-container w-80 flex flex-col justify-center items-end">
+                  {item.scope_session && item.scope_session.confidence_score !== null ? (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
@@ -430,6 +431,10 @@ function App() {
                           <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400 italic">
+                      Scope container ready
                     </div>
                   )}
                 </div>
