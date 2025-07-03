@@ -1,12 +1,8 @@
 # 🚀 GitHub Issues Automation with Devin AI
 
-**Transform your GitHub issue management with AI-powered analysis and confidence scoring**
+**Transform your GitHub issue management with Devin's AI-powered analysis and confidence scoring**
 
-[![GitHub Issues](https://img.shields.io/github/issues/alexandertmills/devin-issues-automation)](https://github.com/alexandertmills/devin-issues-automation/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/alexandertmills/devin-issues-automation)](https://github.com/alexandertmills/devin-issues-automation/stargazers)
-[![License](https://img.shields.io/github/license/alexandertmills/devin-issues-automation)](LICENSE)
-
-## 🎯 Why GitHub Issues Automation?
+## 🎯 Why Scope Your Issues With Devin?
 
 **For Software Engineering Teams:**
 - **Reduce Development Risk**: AI confidence scoring helps identify well-defined, low-risk issues before development begins
