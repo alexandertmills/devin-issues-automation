@@ -1,6 +1,6 @@
 # 🚀 GitHub Issues Automation with Devin AI
 
-**Transform your GitHub issue management with AI-powered analysis, confidence scoring, and automated resolution**
+**Transform your GitHub issue management with AI-powered analysis and confidence scoring**
 
 [![GitHub Issues](https://img.shields.io/github/issues/alexandertmills/devin-issues-automation)](https://github.com/alexandertmills/devin-issues-automation/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/alexandertmills/devin-issues-automation)](https://github.com/alexandertmills/devin-issues-automation/stargazers)
@@ -30,6 +30,7 @@ Our integration with Devin AI provides:
 - **Intelligent Analysis**: Detailed breakdown of implementation requirements and potential challenges
 - **Visual Indicators**: Color-coded confidence levels (🔴 <40%, 🟡 40-69%, 🟢 ≥70%)
 - **Speech Bubble UI**: Clean, intuitive display of AI insights alongside issue details
+- **Smart Prioritization**: Focus development efforts on high-confidence, well-scoped issues
 
 ### 🔐 Seamless GitHub Integration
 ![GitHub App Integration](frontend/public/screenshots/installation-url.png)
@@ -51,25 +52,24 @@ Our integration with Devin AI provides:
 ### 📊 Intelligent Dashboard
 ![Dashboard Overview](frontend/public/screenshots/github-app-main.png)
 
-**Comprehensive Issue Management:**
+**Comprehensive Issue Analysis:**
 - **Repository Dropdown**: Easy switching between connected repositories
 - **Issue State Tracking**: Visual indicators for scoping progress
 - **Batch Operations**: Scope multiple issues simultaneously
 - **Real-time Updates**: Live polling for AI analysis completion
 
-### 🎯 Two-Phase Workflow
+### 🎯 Current Capabilities & Roadmap
 
-**Phase 1: Intelligent Scoping**
+**✅ Intelligent Issue Scoping** *(Available Now)*
 - AI analyzes issue requirements and complexity
 - Generates confidence score and detailed analysis
 - Identifies potential implementation challenges
 - Provides actionable recommendations
 
-**Phase 2: Automated Execution** *(Coming Soon)*
-- AI implements solutions based on scoping analysis
-- Creates pull requests with proposed changes
-- Tracks implementation progress
-- Provides execution status updates
+**🔄 Automated Execution** *(Coming Soon)*
+- AI-powered issue implementation
+- Automated pull request creation
+- Progress tracking and status updates
 
 ---
 
@@ -257,19 +257,19 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ## 📊 Project Status
 
 **Current Version**: v1.0.0-beta  
-**Status**: Production Ready for Issue Analysis  
-**Next Release**: Automated Execution Phase (Q2 2025)
+**Status**: Production Ready for Issue Scoping & Analysis  
+**Next Release**: Automated Implementation Phase (Q2 2025)
 
 ### **What's Working**
 ✅ GitHub App integration and authentication  
 ✅ Multi-repository issue fetching  
-✅ AI-powered confidence scoring  
+✅ AI-powered confidence scoring and analysis  
 ✅ Real-time dashboard with polling  
 ✅ Responsive UI with modern design  
 ✅ Production deployment on Fly.io  
 
 ### **Coming Soon**
-🔄 Automated issue execution and PR creation  
+🔄 Automated issue implementation and PR creation  
 🔄 Advanced filtering and search capabilities  
 🔄 Team collaboration features  
 🔄 Integration with project management tools  
