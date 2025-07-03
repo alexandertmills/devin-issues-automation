@@ -430,7 +430,7 @@ function App() {
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                         <span className="text-sm text-gray-600">scoping in progress...</span>
                       </div>
-                    ) : item.issue.issue_state === 'scope-complete' ? (
+                    ) : item.scope_session ? (
                       <div className="flex items-center">
                       </div>
                     ) : (
@@ -448,7 +448,7 @@ function App() {
                     <div className="w-full flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-sm font-bold text-gray-600">
                           Confidence: {item.scope_session.confidence_score}%
                         </p>
                       </div>
