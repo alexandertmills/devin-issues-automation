@@ -359,33 +359,8 @@ function App() {
           )}
 
           {issues.map((item) => (
-            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow min-h-[200px]">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-end">
-                  <div className="flex-shrink-0 flex items-center gap-2">
-                    {scopingIssues.has(item.issue.id) ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-sm text-gray-600">scoping in progress...</span>
-                      </div>
-                    ) : item.scope_session ? (
-                      <div className="flex items-center">
-                        {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => scopeIssue(item.issue.id)}
-                      >
-                        <Play className="h-3 w-3 mr-1" />
-                        Scope with Devin
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex h-full pt-0">
+            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow min-h-[200px] p-0">
+              <CardContent className="flex h-full p-0 m-0">
                 <div className="content-container w-3/5 pr-6">
                   <CardTitle className="text-lg mb-3 flex items-center gap-2">
                     <a 
@@ -412,19 +387,39 @@ function App() {
                   </p>
                 </div>
                 
-                <div className="scope-container w-2/5 flex flex-col justify-center items-end">
-                  {item.scope_session && item.scope_session.confidence_score !== null && (
-                    <div className="flex flex-col gap-2">
+                <div className="scope-container w-2/5 flex flex-col justify-start items-end">
+                  <div className="flex items-center gap-2 mb-2">
+                    {scopingIssues.has(item.issue.id) ? (
                       <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm text-gray-600">scoping in progress...</span>
+                      </div>
+                    ) : item.scope_session ? (
+                      <div className="flex items-center">
+                        {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => scopeIssue(item.issue.id)}
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        Scope with Devin
+                      </Button>
+                    )}
+                  </div>
+                  {item.scope_session && item.scope_session.confidence_score !== null && (
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="flex items-center gap-2 justify-end">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
                         <p className="text-xs text-gray-600">
                           Confidence: {item.scope_session.confidence_score}%
                         </p>
                       </div>
                       {item.scope_session.analysis && (
-                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-xs">
-                          <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
-                          <p className="text-sm text-blue-800 font-medium mb-1">Devin's Analysis:</p>
+                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg w-full max-w-sm ml-auto">
+                          <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
                           <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
                         </div>
                       )}
