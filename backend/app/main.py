@@ -223,6 +223,27 @@ async def get_repository_issues(
                 issue_state = await stored_issue.get_state(db)
                 print(f"Issue state: {issue_state}")
                 
+                scope_result = await db.execute(
+                    select(DevinSession).where(
+                        DevinSession.github_issue_id == stored_issue.id,
+                        DevinSession.session_type == "scope"
+                    ).order_by(DevinSession.created_at.desc())
+                )
+                scope_session = scope_result.scalars().first()
+                
+                scope_session_data = None
+                if scope_session:
+                    scope_session_data = {
+                        "id": scope_session.id,
+                        "session_id": scope_session.session_id,
+                        "status": scope_session.status,
+                        "confidence_score": scope_session.confidence_score,
+                        "action_plan": scope_session.action_plan,
+                        "result": scope_session.result,
+                        "created_at": scope_session.created_at,
+                        "updated_at": scope_session.updated_at
+                    }
+                
                 stored_issues.append({
                     "id": stored_issue.id,
                     "github_issue_id": stored_issue.github_issue_id,
@@ -234,6 +255,7 @@ async def get_repository_issues(
                     "state": stored_issue.state,
                     "repository": stored_issue.repository,
                     "issue_state": issue_state,
+                    "scope_session": scope_session_data,
                     "created_at": stored_issue.created_at,
                     "updated_at": stored_issue.updated_at
                 })
