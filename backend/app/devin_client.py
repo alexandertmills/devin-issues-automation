@@ -45,10 +45,14 @@ class DevinClient:
         """Get the status of a Devin session"""
         url = f"{self.base_url}/sessions/{session_id}"
         
+        get_headers = {
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
         try:
             print(f"DEBUG: Making GET request to: {url}")
-            print(f"DEBUG: Headers: {self.headers}")
-            response = requests.get(url, headers=self.headers)
+            print(f"DEBUG: Headers: {get_headers}")
+            response = requests.get(url, headers=get_headers)
             print(f"DEBUG: Response status code: {response.status_code}")
             print(f"DEBUG: Response headers: {dict(response.headers)}")
             if response.status_code != 200:
@@ -60,7 +64,7 @@ class DevinClient:
         except requests.RequestException as e:
             print(f"Error getting session status: {e}")
             print(f"DEBUG: Request URL was: {url}")
-            print(f"DEBUG: Request headers were: {self.headers}")
+            print(f"DEBUG: Request headers were: {get_headers}")
             return None
     
     def generate_scope_prompt(self, issue_title: str, issue_body: str, repo_name: str) -> str:
