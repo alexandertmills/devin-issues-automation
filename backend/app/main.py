@@ -198,6 +198,7 @@ async def get_repository_issues(
                     existing_issue.state = issue["state"]
                     existing_issue.repository = f"{owner}/{repo}"
                     existing_issue.html_url = issue["html_url"]
+                    existing_issue.ref_id_number = issue.get("number", 0)
                     stored_issue = existing_issue
                 else:
                     print(f"Creating new issue: {issue['id']}")
@@ -207,7 +208,8 @@ async def get_repository_issues(
                         body=issue.get("body", ""),
                         state=issue["state"],
                         repository=f"{owner}/{repo}",
-                        html_url=issue["html_url"]
+                        html_url=issue["html_url"],
+                        ref_id_number=issue.get("number", 0)
                     )
                     db.add(new_issue)
                     stored_issue = new_issue
@@ -246,6 +248,7 @@ async def get_repository_issues(
                     "id": stored_issue.id,
                     "github_issue_id": stored_issue.github_issue_id,
                     "number": issue["number"],
+                    "ref_id_number": stored_issue.ref_id_number or 0,
                     "html_url": issue["html_url"],
                     "title": stored_issue.title,
                     "body": stored_issue.body,
@@ -702,6 +705,8 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
                 "body": issue.body,
                 "state": issue.state,
                 "repository": issue.repository,
+                "ref_id_number": issue.ref_id_number or 0,
+                "html_url": issue.html_url,
                 "issue_state": await issue.get_state(db),
                 "created_at": issue.created_at,
                 "updated_at": issue.updated_at

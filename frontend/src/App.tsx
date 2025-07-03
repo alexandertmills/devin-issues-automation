@@ -12,6 +12,7 @@ interface GitHubIssue {
   id: number
   github_issue_id: number
   number: number
+  ref_id_number?: number
   html_url: string
   title: string
   body: string
@@ -102,6 +103,7 @@ function App() {
           issue_state: item.issue_state,
           html_url: item.html_url,
           number: item.number,
+          ref_id_number: item.ref_id_number,
           created_at: item.created_at,
           updated_at: item.updated_at
         },
@@ -398,6 +400,14 @@ function App() {
                     >
                       {item.issue.title}
                     </a>
+                    {item.issue.ref_id_number && item.issue.ref_id_number > 0 && (
+                      <Badge 
+                        variant="outline"
+                        className="border-gray-400 text-gray-600 bg-gray-50"
+                      >
+                        #{item.issue.ref_id_number}
+                      </Badge>
+                    )}
                     <Badge 
                       variant="outline"
                       className={item.issue.state === 'open' 
