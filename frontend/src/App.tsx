@@ -80,31 +80,51 @@ function App() {
       return
     }
     
-    const [owner, repo] = selectedRepository.split('/')
     setLoading(true)
     setError(null)
     try {
-      const url = `${API_BASE}/issues/${owner}/${repo}?state=all&limit=10`
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      }
-      
-      const response = await fetch(url, { headers })
+      const response = await fetch(`${API_BASE}/dashboard`)
       if (!response.ok) {
-        throw new Error(`Failed to fetch issues: ${response.statusText}`)
+        throw new Error(`Failed to fetch dashboard data: ${response.statusText}`)
       }
       const data = await response.json()
       
-      const transformedIssues: DashboardItem[] = data.issues?.map((issue: GitHubIssue) => ({
-        issue,
-        scope_session: null,
-        execution_session: null
-      })) || []
+      const filteredIssues: DashboardItem[] = data.dashboard
+        ?.filter((item: any) => item.issue.repository === selectedRepository)
+        ?.map((item: any) => ({
+          issue: {
+            id: item.issue.id,
+            github_issue_id: item.issue.github_issue_id,
+            title: item.issue.title,
+            body: item.issue.body,
+            state: item.issue.state,
+            repository: item.issue.repository,
+            html_url: item.issue.html_url,
+            number: item.issue.github_issue_id,
+            created_at: item.issue.created_at,
+            updated_at: item.issue.updated_at
+          },
+          scope_session: item.scope_session ? {
+            ...item.scope_session,
+            analysis: item.scope_session.analysis || item.scope_session.result
+          } : null,
+          execution_session: item.execution_session
+        })) || []
       
-      setIssues(transformedIssues)
+      setIssues(filteredIssues)
+      
+      filteredIssues.forEach(item => {
+        if (item.scope_session && 
+            item.scope_session.confidence_score === null && 
+            item.scope_session.status !== 'failed') {
+          setScopingIssues(prev => new Set(prev).add(item.issue.id))
+          startPollingForConfidence(item.issue.id)
+        }
+      })
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch issues')
-      console.error('Error fetching issues:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
+      console.error('Error fetching dashboard data:', err)
     } finally {
       setLoading(false)
     }
@@ -272,6 +292,18 @@ function App() {
     fetchRepositories()
   }, [])
 
+  useEffect(() => {
+    issues.forEach(item => {
+      if (item.scope_session && 
+          item.scope_session.confidence_score === null && 
+          item.scope_session.status !== 'failed' &&
+          !scopingIssues.has(item.issue.id)) {
+        setScopingIssues(prev => new Set(prev).add(item.issue.id))
+        startPollingForConfidence(item.issue.id)
+      }
+    })
+  }, [issues])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -372,7 +404,6 @@ function App() {
                       >
                         {item.issue.title}
                       </a>
-                      <Badge variant="outline">#{item.issue.number}</Badge>
                       <Badge 
                         variant="outline"
                         className={item.issue.state === 'open' 
