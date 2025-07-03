@@ -20,7 +20,8 @@ class DevinClient:
         """Create a new Devin session with optional structured output"""
         url = f"{self.base_url}/sessions"
         payload = {
-            "prompt": prompt
+            "prompt": prompt,
+            "unlisted": True
         }
         
         if structured_output_schema:
