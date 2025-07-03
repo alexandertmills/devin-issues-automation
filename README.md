@@ -82,8 +82,6 @@ Our integration with Devin AI provides:
 
 ---
 
----
-
 ## 💡 Use Cases
 
 ### **Sprint Planning**
