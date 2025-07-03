@@ -30,11 +30,11 @@ class GitHubIssue(Base):
         
         result = await db_session.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == self.id,
+                DevinSession.github_issue_id == self.id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
-        most_recent_scope_session = result.scalar_one_or_none()
+        most_recent_scope_session = result.scalars().first()
         
         if not most_recent_scope_session:
             return "ready-to-scope"
@@ -65,14 +65,14 @@ class Repository(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
-    github_user = Column(Integer, ForeignKey("github_users.id"), nullable=False)
+    github_user_id = Column(Integer, ForeignKey("github_users.id"), nullable=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    github_user_rel = relationship("GitHubUser", back_populates="repositories")
+    github_user = relationship("GitHubUser", back_populates="repositories")
     
     def get_owner_username(self):
-        return self.github_user_rel.username if self.github_user_rel else None
+        return self.github_user.username if self.github_user else None
     
     def get_issues_api_url(self):
         owner_username = self.get_owner_username()
@@ -83,7 +83,7 @@ class DevinSession(Base):
     __tablename__ = "devin_sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    github_issue = Column(Integer, ForeignKey('github_issues.id'), index=True)
+    github_issue_id = Column(Integer, ForeignKey('github_issues.id'), index=True)
     session_id = Column(String, unique=True, index=True)
     session_type = Column(String)  # "scope" or "execute"
     status = Column(String)  # "pending", "running", "completed", "failed"

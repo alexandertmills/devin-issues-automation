@@ -205,7 +205,7 @@ async def scope_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue=issue.github_issue_id,
+        github_issue_id=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="scope",
         status="pending"
@@ -236,7 +236,7 @@ async def execute_issue(
     
     scope_result = await db.execute(
         select(DevinSession).where(
-            DevinSession.github_issue == issue.github_issue_id,
+            DevinSession.github_issue_id == issue.github_issue_id,
             DevinSession.session_type == "scope"
         ).order_by(DevinSession.created_at.desc())
     )
@@ -264,7 +264,7 @@ async def execute_issue(
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue=issue.github_issue_id,
+        github_issue_id=issue.github_issue_id,
         session_id=session_data.get("session_id", ""),
         session_type="execute",
         status="pending"
@@ -526,7 +526,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     for issue in issues:
         scope_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == issue.github_issue_id,
+                DevinSession.github_issue_id == issue.github_issue_id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -534,7 +534,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
         
         exec_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == issue.github_issue_id,
+                DevinSession.github_issue_id == issue.github_issue_id,
                 DevinSession.session_type == "execute"
             ).order_by(DevinSession.created_at.desc())
         )
