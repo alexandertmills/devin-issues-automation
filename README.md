@@ -82,46 +82,6 @@ Our integration with Devin AI provides:
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm/yarn
-- Python 3.12+ with Poetry
-- PostgreSQL database (we recommend Neon)
-- GitHub App credentials
-
-### 1. Clone and Setup
-```bash
-git clone https://github.com/alexandertmills/devin-issues-automation.git
-cd devin-issues-automation
-```
-
-### 2. Backend Setup
-```bash
-cd backend
-poetry install
-cp .env.example .env
-# Configure your environment variables
-poetry run fastapi dev app/main.py
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-cp .env.example .env
-# Configure your API URL
-npm run dev
-```
-
-### 4. GitHub App Configuration
-1. Create a GitHub App in your organization settings
-2. Configure webhook URL and permissions
-3. Install the app on your target repositories
-4. Update environment variables with app credentials
-
-**Detailed setup instructions**: See [WORKSPACE_SETUP.md](WORKSPACE_SETUP.md)
-
 ---
 
 ## 💡 Use Cases
