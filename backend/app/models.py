@@ -16,6 +16,7 @@ class GitHubIssue(Base):
     state = Column(String)
     repository = Column(String)
     html_url = Column(String)
+    ref_id_number = Column(Integer, default=0)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
