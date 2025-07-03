@@ -16,13 +16,16 @@ class DevinClient:
             "Content-Type": "application/json"
         }
     
-    def create_session(self, prompt: str) -> Optional[Dict]:
-        """Create a new Devin session"""
+    def create_session(self, prompt: str, structured_output_schema: Optional[Dict] = None) -> Optional[Dict]:
+        """Create a new Devin session with optional structured output"""
         url = f"{self.base_url}/sessions"
         payload = {
             "prompt": prompt,
             "unlisted": True
         }
+        
+        if structured_output_schema:
+            payload["structured_output"] = structured_output_schema
         
         try:
             print(f"Making request to: {url}")
@@ -68,6 +71,25 @@ CONFIDENCE_SCORE: [0-100]
 COMPLEXITY: [Low/Medium/High]
 ACTION_PLAN: [Detailed step-by-step plan]
 """
+    
+    def get_confidence_scoring_schema(self) -> Dict:
+        """Get structured output schema for confidence scoring"""
+        return {
+            "type": "object",
+            "properties": {
+                "confidence_score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Confidence score (0-100) for how well-defined and actionable this issue is"
+                },
+                "analysis": {
+                    "type": "string",
+                    "description": "Brief analysis of what needs to be done"
+                }
+            },
+            "required": ["confidence_score", "analysis"]
+        }
     
     def generate_execution_prompt(self, issue_title: str, issue_body: str, action_plan: str, repo_name: str) -> str:
         """Generate a prompt for executing an issue"""

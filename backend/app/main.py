@@ -270,13 +270,14 @@ async def scope_issue(
         issue.repository
     )
     
-    session_data = devin_client.create_session(prompt)
+    schema = devin_client.get_confidence_scoring_schema()
+    session_data = devin_client.create_session(prompt, structured_output_schema=schema)
     
     if not session_data:
         raise HTTPException(status_code=500, detail="Failed to create Devin session")
     
     devin_session = DevinSession(
-        github_issue=issue.github_issue_id,
+        github_issue_id=issue.id,
         session_id=session_data.get("session_id", ""),
         session_type="scope",
         status="pending"
@@ -370,6 +371,10 @@ async def get_session_status(
     
     if devin_status:
         session.status = devin_status.get("status", session.status)
+        if "structured_output" in devin_status and devin_status["structured_output"]:
+            structured_data = devin_status["structured_output"]
+            if "confidence_score" in structured_data:
+                session.confidence_score = structured_data["confidence_score"]
         if "confidence_score" in devin_status:
             session.confidence_score = devin_status["confidence_score"]
         if "action_plan" in devin_status:
@@ -597,7 +602,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
     for issue in issues:
         scope_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == issue.github_issue_id,
+                DevinSession.github_issue_id == issue.id,
                 DevinSession.session_type == "scope"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -605,7 +610,7 @@ async def get_dashboard_data(db: AsyncSession = Depends(get_db)):
         
         exec_result = await db.execute(
             select(DevinSession).where(
-                DevinSession.github_issue == issue.github_issue_id,
+                DevinSession.github_issue_id == issue.id,
                 DevinSession.session_type == "execute"
             ).order_by(DevinSession.created_at.desc())
         )
@@ -809,3 +814,45 @@ async def sync_repositories():
         return {"message": "Repository sync completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error syncing repositories: {str(e)}")
+
+@app.get("/issues/{issue_id}")
+async def get_issue_with_confidence(
+    issue_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get issue details with current confidence score"""
+    result = await db.execute(
+        select(GitHubIssue).where(GitHubIssue.id == issue_id)
+    )
+    issue = result.scalar_one_or_none()
+    
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    
+    scope_result = await db.execute(
+        select(DevinSession).where(
+            DevinSession.github_issue_id == issue.id,
+            DevinSession.session_type == "scope"
+        ).order_by(DevinSession.created_at.desc())
+    )
+    scope_session = scope_result.scalar_one_or_none()
+    
+    current_confidence = "not yet"
+    if scope_session and scope_session.confidence_score is not None:
+        current_confidence = scope_session.confidence_score
+    elif scope_session and devin_client:
+        devin_status = devin_client.get_session_status(scope_session.session_id)
+        if devin_status and devin_status.get("structured_output"):
+            structured_data = devin_status["structured_output"]
+            if "confidence_score" in structured_data:
+                scope_session.confidence_score = structured_data["confidence_score"]
+                scope_session.status = devin_status.get("status", scope_session.status)
+                await db.commit()
+                current_confidence = scope_session.confidence_score
+    
+    return {
+        "issue_id": issue_id,
+        "current_confidence": current_confidence,
+        "title": issue.title,
+        "state": issue.state
+    }

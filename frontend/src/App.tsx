@@ -47,6 +47,7 @@ function App() {
   const [repositories, setRepositories] = useState<Repository[]>([])
   const [selectedRepository, setSelectedRepository] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [scopingStates, setScopingStates] = useState<Record<number, boolean>>({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -102,6 +103,9 @@ function App() {
   }
 
   const scopeIssue = async (issueId: number) => {
+    console.log(`Starting scope for issue ${issueId}`)
+    setScopingStates(prev => ({ ...prev, [issueId]: true }))
+    
     try {
       const response = await fetch(`${API_BASE}/issues/${issueId}/scope`, {
         method: 'POST',
@@ -131,10 +135,61 @@ function App() {
             }
           : item
       ))
+      
+      startPollingForConfidence(issueId)
+      
     } catch (err) {
       console.error('Error scoping issue:', err)
       setError(err instanceof Error ? err.message : 'Failed to scope issue')
+      setScopingStates(prev => ({ ...prev, [issueId]: false }))
     }
+  }
+
+  const startPollingForConfidence = (issueId: number) => {
+    console.log(`Starting polling for issue ${issueId}`)
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        console.log(`Polling confidence for issue ${issueId}`)
+        const response = await fetch(`${API_BASE}/issues/${issueId}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to get issue: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        console.log(`Polling response for issue ${issueId}:`, data)
+        
+        if (data.current_confidence !== "not yet") {
+          console.log(`Confidence score received for issue ${issueId}: ${data.current_confidence}`)
+          clearInterval(pollInterval)
+          setScopingStates(prev => ({ ...prev, [issueId]: false }))
+          
+          setIssues(prev => prev.map(item => 
+            item.issue.id === issueId 
+              ? { 
+                  ...item, 
+                  scope_session: item.scope_session ? { 
+                    ...item.scope_session,
+                    confidence_score: data.current_confidence,
+                    status: 'completed'
+                  } : {
+                    session_id: null,
+                    status: 'completed',
+                    confidence_score: data.current_confidence,
+                    action_plan: null,
+                    created_at: new Date().toISOString()
+                  }
+                }
+              : item
+          ))
+        }
+      } catch (err) {
+        console.error(`Error polling confidence for issue ${issueId}:`, err)
+        clearInterval(pollInterval)
+        setScopingStates(prev => ({ ...prev, [issueId]: false }))
+      }
+    }, 10000)
   }
 
 
@@ -156,9 +211,37 @@ function App() {
     }
   }
 
+  const loadDashboardIssues = async () => {
+    console.log('Loading issues from dashboard endpoint')
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`${API_BASE}/dashboard`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dashboard: ${response.statusText}`)
+      }
+      const data = await response.json()
+      console.log('Dashboard data loaded:', data)
+      
+      const transformedIssues: DashboardItem[] = data.dashboard?.map((item: any) => ({
+        issue: item.issue,
+        scope_session: item.scope_session,
+        execution_session: item.execution_session
+      })) || []
+      
+      setIssues(transformedIssues)
+      console.log(`Loaded ${transformedIssues.length} issues from dashboard`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard')
+      console.error('Error loading dashboard:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchRepositories()
+    loadDashboardIssues()
   }, [])
 
   return (
@@ -274,7 +357,12 @@ function App() {
                   </div>
                   
                   <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                    {item.scope_session ? (
+                    {scopingStates[item.issue.id] ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm text-gray-600">scoping in progress...</span>
+                      </div>
+                    ) : item.scope_session ? (
                       <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && getStatusBadge(item.scope_session.status)}
                         {item.scope_session.confidence_score !== null && (
