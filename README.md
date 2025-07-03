@@ -55,8 +55,6 @@ Our integration with Devin AI provides:
 **Comprehensive Issue Analysis:**
 - **Repository Dropdown**: Easy switching between connected repositories
 - **Issue State Tracking**: Visual indicators for scoping progress
-- **Batch Operations**: Scope multiple issues simultaneously
-- **Real-time Updates**: Live polling for AI analysis completion
 
 ### 🎯 Current Capabilities & Roadmap
 
