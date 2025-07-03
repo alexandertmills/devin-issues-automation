@@ -410,7 +410,7 @@ function App() {
                     )}
                   </div>
                   {item.scope_session && item.scope_session.confidence_score !== null && (
-                    <div className="flex flex-col gap-2 w-full items-end">
+                    <div className="w-full flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
                         <p className="text-xs text-gray-600">
@@ -418,9 +418,11 @@ function App() {
                         </p>
                       </div>
                       {item.scope_session.analysis && (
-                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-sm ml-auto">
-                          <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
-                          <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                        <div className="w-full flex justify-end">
+                          <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-sm">
+                            <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
+                            <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                          </div>
                         </div>
                       )}
                     </div>
