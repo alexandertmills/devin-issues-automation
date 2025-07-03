@@ -809,3 +809,60 @@ async def sync_repositories():
         return {"message": "Repository sync completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error syncing repositories: {str(e)}")
+
+@app.post("/verify-installation")
+async def verify_installation(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify GitHub App installation ID and add new user"""
+    try:
+        data = await request.json()
+        installation_id = data.get("installation_id")
+        
+        if not installation_id:
+            raise HTTPException(status_code=400, detail="Installation ID is required")
+        
+        app_id = os.getenv("GITHUB_APP_ID")
+        private_key = os.getenv("GITHUB_APP_PRIVATE_KEY")
+        
+        if not app_id or not private_key:
+            raise HTTPException(status_code=503, detail="GitHub App not configured")
+        
+        try:
+            client = GitHubClient(app_id=app_id, private_key=private_key, installation_id=installation_id)
+            test_url = f"{client.base_url}/app/installations/{installation_id}"
+            response = requests.get(test_url, headers=client.headers)
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Invalid installation ID")
+            
+            installation_data = response.json()
+            username = installation_data.get("account", {}).get("login")
+            
+            if not username:
+                raise HTTPException(status_code=400, detail="Could not fetch username from installation")
+            
+            result = await db.execute(
+                select(GitHubUser).where(GitHubUser.username == username)
+            )
+            existing_user = result.scalar_one_or_none()
+            
+            if existing_user:
+                existing_user.installation_id = installation_id
+                await db.commit()
+                return {"success": True, "username": username, "message": "User updated successfully"}
+            else:
+                new_user = GitHubUser(
+                    username=username,
+                    installation_id=installation_id
+                )
+                db.add(new_user)
+                await db.commit()
+                return {"success": True, "username": username, "message": "User added successfully"}
+                
+        except requests.RequestException as e:
+            raise HTTPException(status_code=400, detail=f"Failed to verify installation: {str(e)}")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Verification error: {str(e)}")
