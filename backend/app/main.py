@@ -766,3 +766,12 @@ async def get_app_repositories():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching repositories: {str(e)}")
+
+@app.post("/app/repositories/sync")
+async def sync_repositories():
+    """Manually trigger repository sync for all GitHub users"""
+    try:
+        await sync_user_repositories()
+        return {"message": "Repository sync completed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error syncing repositories: {str(e)}")
