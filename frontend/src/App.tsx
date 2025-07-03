@@ -391,32 +391,35 @@ function App() {
           )}
 
           {issues.map((item) => (
-            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-1 flex items-center gap-2">
-                      <a 
-                        href={item.issue.html_url || `https://github.com/${selectedRepository}/issues/${item.issue.number}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {item.issue.title}
-                      </a>
-                      <Badge 
-                        variant="outline"
-                        className={item.issue.state === 'open' 
-                          ? 'border-red-500 text-red-700 bg-red-50' 
-                          : 'border-purple-500 text-purple-700 bg-purple-50'
-                        }
-                      >
-                        {item.issue.state}
-                      </Badge>
-                    </CardTitle>
-                  </div>
-                  
-                  <div className="flex-shrink-0 ml-4 flex items-center gap-2">
+            <Card key={item.issue.id} className="relative hover:shadow-md transition-shadow min-h-[200px] p-0">
+              <CardContent className="flex h-full p-0 m-0">
+                <div className="content-container w-3/5 pr-6">
+                  <CardTitle className="text-lg mb-3 flex items-center gap-2">
+                    <a 
+                      href={item.issue.html_url || `https://github.com/${selectedRepository}/issues/${item.issue.number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {item.issue.title}
+                    </a>
+                    <Badge 
+                      variant="outline"
+                      className={item.issue.state === 'open' 
+                        ? 'border-red-500 text-red-700 bg-red-50' 
+                        : 'border-purple-500 text-purple-700 bg-purple-50'
+                      }
+                    >
+                      {item.issue.state}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-gray-700 text-sm line-clamp-3">
+                    {item.issue.body || 'No description provided'}
+                  </p>
+                </div>
+                
+                <div className="scope-container w-2/5 flex flex-col justify-start items-end">
+                  <div className="flex items-center gap-2 mb-2">
                     {scopingIssues.has(item.issue.id) ? (
                       <div className="flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -437,17 +440,8 @@ function App() {
                       </Button>
                     )}
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex">
-                <div className="w-3/5 pr-4">
-                  <p className="text-gray-700 text-sm line-clamp-3">
-                    {item.issue.body || 'No description provided'}
-                  </p>
-                </div>
-                <div className="w-2/5 flex justify-end">
                   {item.scope_session && item.scope_session.confidence_score !== null && (
-                    <div className="flex flex-col gap-2">
+                    <div className="w-full flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
                         <p className="text-xs text-gray-600">
@@ -455,10 +449,11 @@ function App() {
                         </p>
                       </div>
                       {item.scope_session.analysis && (
-                        <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-xs">
-                          <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
-                          <p className="text-sm text-blue-800 font-medium mb-1">Devin's Analysis:</p>
-                          <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                        <div className="w-full flex justify-end">
+                          <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg max-w-sm">
+                            <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
+                            <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                          </div>
                         </div>
                       )}
                     </div>
