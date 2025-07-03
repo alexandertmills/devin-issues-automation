@@ -26,6 +26,7 @@ interface DevinSession {
   status: string | null
   confidence_score: number | null
   action_plan: string | null
+  analysis: string | null
   created_at: string | null
 }
 
@@ -137,8 +138,9 @@ function App() {
                 status: data.status,
                 confidence_score: null,
                 action_plan: null,
+                analysis: null,
                 created_at: new Date().toISOString()
-              } 
+              }
             }
           : item
       ))
@@ -186,6 +188,7 @@ function App() {
                   scope_session: { 
                     ...item.scope_session,
                     confidence_score: data.current_confidence,
+                    analysis: data.analysis,
                     status: 'completed'
                   } 
                 }
@@ -392,11 +395,20 @@ function App() {
                       <div className="flex items-center">
                         {item.scope_session.status !== 'completed' && item.scope_session.confidence_score === null && getStatusBadge(item.scope_session.status)}
                         {item.scope_session.confidence_score !== null && (
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
-                            <p className="text-xs text-gray-600">
-                              Confidence: {item.scope_session.confidence_score}%
-                            </p>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${getConfidenceColor(item.scope_session.confidence_score)}`}></div>
+                              <p className="text-xs text-gray-600">
+                                Confidence: {item.scope_session.confidence_score}%
+                              </p>
+                            </div>
+                            {item.scope_session.analysis && (
+                              <div className="relative bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2 max-w-md">
+                                <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-50 border-l border-t border-blue-200 transform rotate-45"></div>
+                                <p className="text-sm text-blue-800 font-medium mb-1">Devin's Analysis:</p>
+                                <p className="text-xs text-blue-700">{item.scope_session.analysis}</p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

@@ -335,6 +335,8 @@ async def get_issue_with_confidence(
                 scope_session.confidence_score = confidence_score
                 if "action_plan" in structured_output:
                     scope_session.action_plan = structured_output["action_plan"]
+                if "analysis" in structured_output:
+                    scope_session.result = structured_output["analysis"]
                 await db.commit()
                 current_confidence = confidence_score
             else:
@@ -346,7 +348,8 @@ async def get_issue_with_confidence(
     return {
         "issue_id": issue.id,
         "title": issue.title,
-        "current_confidence": current_confidence
+        "current_confidence": current_confidence,
+        "analysis": scope_session.result if scope_session and scope_session.result else None
     }
 
 @app.post("/issues/{issue_id}/execute")
