@@ -80,12 +80,6 @@ Our integration with Devin AI provides:
 - **AI Integration**: Devin API for intelligent analysis
 - **Authentication**: GitHub App with JWT-based security
 
-### **Scalable Infrastructure**
-- **Deployment**: Fly.io backend hosting
-- **Database**: Cloud-native PostgreSQL with connection pooling
-- **API Design**: RESTful endpoints with comprehensive error handling
-- **Real-time Updates**: Polling-based status synchronization
-
 ---
 
 ## 🚀 Quick Start
