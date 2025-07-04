@@ -116,10 +116,24 @@ function App() {
       
       setIssues(filteredIssues)
       
+      // Clear any issues from scopingIssues that now have confidence scores
+      setScopingIssues(prev => {
+        const newSet = new Set(prev)
+        filteredIssues.forEach(item => {
+          if (item.scope_session && 
+              (item.scope_session.confidence_score !== null || item.scope_session.status === 'failed')) {
+            newSet.delete(item.issue.id)
+          }
+        })
+        return newSet
+      })
+      
+      // Start polling for issues that need it
       filteredIssues.forEach(item => {
         if (item.scope_session && 
             item.scope_session.confidence_score === null && 
-            item.scope_session.status !== 'failed') {
+            item.scope_session.status !== 'failed' &&
+            !scopingIssues.has(item.issue.id)) {
           setScopingIssues(prev => new Set(prev).add(item.issue.id))
           startPollingForConfidence(item.issue.id)
         }
@@ -312,7 +326,7 @@ function App() {
                 GitHub Issues Scoping With Devin
               </h1>
               <p className="text-gray-600">
-                Automate GitHub issue analysis and resolution using Devin AI
+                Automate GitHub Issue scoping and analysis using Devin.
               </p>
             </div>
             <Button
